@@ -28,10 +28,11 @@
       text-align: center;
     }
 
-    .container {
+    .main-container {
       display: flex;
       gap: 2rem;
-      align-items: flex-start;
+      align-items: stretch;
+      position: relative;
     }
 
     .map-frame {
@@ -40,6 +41,7 @@
       position: relative;
       display: inline-block;
       background: #1a1208;
+      flex-shrink: 0;
     }
 
     .map-frame::before, .map-frame::after {
@@ -72,7 +74,7 @@
 
     .map-wrapper img {
       display: block;
-      max-width: 90vw;
+      max-width: 60vw;
       height: auto;
     }
 
@@ -103,31 +105,25 @@
     }
 
     .side-panel {
-      display: none;
+      position: fixed;
+      right: 0;
+      top: 0;
+      bottom: 0;
+      width: 350px;
       background: linear-gradient(135deg, #2a1f0f 0%, #1a1208 100%);
-      border: 4px solid #7a5c1e;
-      box-shadow: 0 0 0 2px #3a2a08, 0 0 30px rgba(201,168,76,0.25), inset 0 0 20px rgba(0,0,0,0.5);
+      border-left: 4px solid #7a5c1e;
+      box-shadow: -10px 0 30px rgba(0,0,0,0.8), inset -10px 0 20px rgba(0,0,0,0.5);
       padding: 2rem;
-      min-width: 300px;
-      border-radius: 8px;
       color: #c9a84c;
       font-family: 'UnifrakturMaguntia', cursive;
+      transform: translateX(100%);
+      transition: transform 0.3s ease-out;
+      overflow-y: auto;
+      z-index: 100;
     }
 
     .side-panel.active {
-      display: block;
-      animation: slideIn 0.3s ease-out;
-    }
-
-    @keyframes slideIn {
-      from {
-        opacity: 0;
-        transform: translateX(20px);
-      }
-      to {
-        opacity: 1;
-        transform: translateX(0);
-      }
+      transform: translateX(0);
     }
 
     .side-panel h2 {
@@ -168,6 +164,7 @@
       font-family: 'UnifrakturMaguntia', cursive;
       margin-top: 1.5rem;
       transition: all 0.2s;
+      width: 100%;
     }
 
     .close-btn:hover {
@@ -180,13 +177,31 @@
     }
 
     .hex-clickable:hover {
-      stroke-width: 4 !important;
+      opacity: 0.8;
+    }
+
+    .overlay-backdrop {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0,0,0,0.5);
+      z-index: 50;
+    }
+
+    .overlay-backdrop.active {
+      display: block;
     }
   </style>
 </head>
 <body>
   <h1>Gran Campanya</h1>
-  <div class="container">
+  
+  <div class="overlay-backdrop" id="backdrop" onclick="closeSidePanel()"></div>
+
+  <div class="main-container">
     <div class="map-frame">
       <span class="corner-tr"></span>
       <span class="corner-bl"></span>
@@ -197,12 +212,12 @@
         <div id="army-overlay"></div>
       </div>
     </div>
+  </div>
 
-    <div id="sidePanel" class="side-panel">
-      <h2 id="hexName">Hexagon</h2>
-      <div id="armyDetails"></div>
-      <button class="close-btn" onclick="closeSidePanel()">Close</button>
-    </div>
+  <div id="sidePanel" class="side-panel">
+    <h2 id="hexName">Hexagon</h2>
+    <div id="armyDetails"></div>
+    <button class="close-btn" onclick="closeSidePanel()">Close</button>
   </div>
 
   <script>
@@ -211,6 +226,7 @@
     const svgHex = document.getElementById('hex-overlay');
     const armyOverlay = document.getElementById('army-overlay');
     const sidePanel = document.getElementById('sidePanel');
+    const backdrop = document.getElementById('backdrop');
     const hexName = document.getElementById('hexName');
     const armyDetails = document.getElementById('armyDetails');
 
@@ -221,6 +237,7 @@
 
     let teamMap = {};
     let armyMap = {};
+    let hexPositions = {};
 
     function parseGVizJSON(text) {
       const map = {};
@@ -262,6 +279,28 @@
       return pts.join(' ');
     }
 
+    function pointInPolygon(x, y, points) {
+      const pairs = points.split(' ').map(p => p.split(',').map(Number));
+      let inside = false;
+      for (let i = 0, j = pairs.length - 1; i < pairs.length; j = i++) {
+        const xi = pairs[i][0], yi = pairs[i][1];
+        const xj = pairs[j][0], yj = pairs[j][1];
+        const intersect = ((yi > y) !== (yj > y)) && (x < (xj - xi) * (y - yi) / (yj - yi) + xi);
+        if (intersect) inside = !inside;
+      }
+      return inside;
+    }
+
+    function getHexAtPoint(x, y) {
+      for (const [hexKey, points] of Object.entries(hexPositions)) {
+        if (pointInPolygon(x, y, points)) {
+          const [col, row] = hexKey.split('_').map(Number);
+          return { col, row };
+        }
+      }
+      return null;
+    }
+
     function showHexPanel(col, row) {
       const hexKey = `${col}_${row}`;
       const team = teamOf(col, row);
@@ -300,10 +339,12 @@
       }
 
       sidePanel.classList.add('active');
+      backdrop.classList.add('active');
     }
 
     function closeSidePanel() {
       sidePanel.classList.remove('active');
+      backdrop.classList.remove('active');
     }
 
     function drawAll() {
@@ -318,6 +359,7 @@
       });
 
       armyOverlay.innerHTML = '';
+      hexPositions = {};
 
       const rW = W / (2 + 1.5 * (COLS - 1));
       const rH = H / (ROWS * Math.sqrt(3) + 1);
@@ -336,27 +378,35 @@
           const cy = vr + row * hexH + (col % 2 === 1 ? vr : 0);
           const pts = flatHexCorners(cx, cy, r - 1);
 
+          // Store hex position for click detection
+          const hexKey = `${col}_${row}`;
+          hexPositions[hexKey] = pts;
+
           if (team === 'blau') blueCount++;
           else if (team === 'vermell') redCount++;
 
+          // Fill (clickable area)
           const fill = document.createElementNS('http://www.w3.org/2000/svg', 'polygon');
           fill.setAttribute('points', pts);
           fill.setAttribute('fill', team === 'blau' ? 'rgba(60,120,220,0.22)' : 'rgba(210,50,50,0.22)');
           fill.setAttribute('stroke', 'none');
+          fill.setAttribute('class', 'hex-clickable');
+          fill.addEventListener('click', (e) => {
+            e.stopPropagation();
+            showHexPanel(col, row);
+          });
           svgOwn.appendChild(fill);
 
+          // Border
           const poly = document.createElementNS('http://www.w3.org/2000/svg', 'polygon');
           poly.setAttribute('points', pts);
           poly.setAttribute('fill', 'none');
           poly.setAttribute('stroke', team === 'blau' ? 'rgba(80,150,255,0.85)' : 'rgba(230,70,70,0.85)');
           poly.setAttribute('stroke-width', '2.5');
-          poly.setAttribute('class', 'hex-clickable');
-          poly.setAttribute('data-col', col);
-          poly.setAttribute('data-row', row);
-          poly.addEventListener('click', () => showHexPanel(col, row));
+          poly.setAttribute('pointer-events', 'none');
           svgHex.appendChild(poly);
 
-          const hexKey = `${col}_${row}`;
+          // Armies
           const armies = armyMap[hexKey];
           if (armies && armies.length > 0) {
             const sortedArmies = [...armies].sort((a, b) => b.count - a.count);
