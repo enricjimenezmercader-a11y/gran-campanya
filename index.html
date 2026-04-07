@@ -28,6 +28,12 @@
       text-align: center;
     }
 
+    .container {
+      display: flex;
+      gap: 2rem;
+      align-items: flex-start;
+    }
+
     .map-frame {
       border: 6px solid #7a5c1e;
       box-shadow: 0 0 0 2px #3a2a08, 0 0 30px rgba(201,168,76,0.25), inset 0 0 20px rgba(0,0,0,0.5);
@@ -77,6 +83,11 @@
       pointer-events: none;
     }
 
+    #hex-overlay {
+      pointer-events: auto;
+      cursor: pointer;
+    }
+
     .army-stack {
       position: absolute;
       width: 30px;
@@ -90,18 +101,107 @@
       object-fit: contain;
       filter: drop-shadow(2px 2px 3px rgba(0,0,0,0.6));
     }
+
+    .side-panel {
+      display: none;
+      background: linear-gradient(135deg, #2a1f0f 0%, #1a1208 100%);
+      border: 4px solid #7a5c1e;
+      box-shadow: 0 0 0 2px #3a2a08, 0 0 30px rgba(201,168,76,0.25), inset 0 0 20px rgba(0,0,0,0.5);
+      padding: 2rem;
+      min-width: 300px;
+      border-radius: 8px;
+      color: #c9a84c;
+      font-family: 'UnifrakturMaguntia', cursive;
+    }
+
+    .side-panel.active {
+      display: block;
+      animation: slideIn 0.3s ease-out;
+    }
+
+    @keyframes slideIn {
+      from {
+        opacity: 0;
+        transform: translateX(20px);
+      }
+      to {
+        opacity: 1;
+        transform: translateX(0);
+      }
+    }
+
+    .side-panel h2 {
+      font-size: 1.8rem;
+      margin-bottom: 1.5rem;
+      text-shadow: 0 0 12px rgba(201,168,76,0.7), 2px 2px 4px #000;
+      border-bottom: 2px solid #7a5c1e;
+      padding-bottom: 1rem;
+    }
+
+    .army-info {
+      margin: 1rem 0;
+      padding: 0.8rem;
+      background: rgba(201,168,76,0.1);
+      border-left: 3px solid #c9a84c;
+      border-radius: 4px;
+    }
+
+    .army-info-label {
+      font-size: 0.9rem;
+      opacity: 0.8;
+      margin-bottom: 0.3rem;
+    }
+
+    .army-info-value {
+      font-size: 1.3rem;
+      font-weight: bold;
+      color: #fff;
+    }
+
+    .close-btn {
+      background: #7a5c1e;
+      border: 2px solid #c9a84c;
+      color: #c9a84c;
+      padding: 0.5rem 1rem;
+      border-radius: 4px;
+      cursor: pointer;
+      font-family: 'UnifrakturMaguntia', cursive;
+      margin-top: 1.5rem;
+      transition: all 0.2s;
+    }
+
+    .close-btn:hover {
+      background: #c9a84c;
+      color: #1a1208;
+    }
+
+    .hex-clickable {
+      cursor: pointer;
+    }
+
+    .hex-clickable:hover {
+      stroke-width: 4 !important;
+    }
   </style>
 </head>
 <body>
   <h1>Gran Campanya</h1>
-  <div class="map-frame">
-    <span class="corner-tr"></span>
-    <span class="corner-bl"></span>
-    <div class="map-wrapper">
-      <img id="mapImg" src="map.jpg">
-      <svg id="ownership-overlay"></svg>
-      <svg id="hex-overlay"></svg>
-      <div id="army-overlay"></div>
+  <div class="container">
+    <div class="map-frame">
+      <span class="corner-tr"></span>
+      <span class="corner-bl"></span>
+      <div class="map-wrapper">
+        <img id="mapImg" src="map.jpg">
+        <svg id="ownership-overlay"></svg>
+        <svg id="hex-overlay"></svg>
+        <div id="army-overlay"></div>
+      </div>
+    </div>
+
+    <div id="sidePanel" class="side-panel">
+      <h2 id="hexName">Hexagon</h2>
+      <div id="armyDetails"></div>
+      <button class="close-btn" onclick="closeSidePanel()">Close</button>
     </div>
   </div>
 
@@ -110,6 +210,9 @@
     const svgOwn = document.getElementById('ownership-overlay');
     const svgHex = document.getElementById('hex-overlay');
     const armyOverlay = document.getElementById('army-overlay');
+    const sidePanel = document.getElementById('sidePanel');
+    const hexName = document.getElementById('hexName');
+    const armyDetails = document.getElementById('armyDetails');
 
     const COLS = 12, ROWS = 5;
     const waterHexes = new Set(['2_1','3_1','4_0','4_1','5_0','6_0']);
@@ -159,6 +262,50 @@
       return pts.join(' ');
     }
 
+    function showHexPanel(col, row) {
+      const hexKey = `${col}_${row}`;
+      const team = teamOf(col, row);
+      
+      if (!team) return;
+
+      hexName.textContent = hexKey;
+      armyDetails.innerHTML = '';
+
+      const armies = armyMap[hexKey];
+      if (armies && armies.length > 0) {
+        const sortedArmies = [...armies].sort((a, b) => b.count - a.count);
+        
+        for (const army of sortedArmies) {
+          const div = document.createElement('div');
+          div.className = 'army-info';
+          div.innerHTML = `
+            <div class="army-info-label">Jugador ${army.player}</div>
+            <div class="army-info-value">${army.count} armies</div>
+          `;
+          armyDetails.appendChild(div);
+        }
+
+        const totalDiv = document.createElement('div');
+        totalDiv.className = 'army-info';
+        totalDiv.style.marginTop = '1.5rem';
+        totalDiv.style.borderLeft = '3px solid #fff';
+        const totalCount = sortedArmies.reduce((sum, a) => sum + a.count, 0);
+        totalDiv.innerHTML = `
+          <div class="army-info-label">Total</div>
+          <div class="army-info-value">${totalCount} armies</div>
+        `;
+        armyDetails.appendChild(totalDiv);
+      } else {
+        armyDetails.innerHTML = '<div class="army-info"><div class="army-info-label">No armies</div></div>';
+      }
+
+      sidePanel.classList.add('active');
+    }
+
+    function closeSidePanel() {
+      sidePanel.classList.remove('active');
+    }
+
     function drawAll() {
       const W = img.offsetWidth;
       const H = img.offsetHeight;
@@ -203,12 +350,15 @@
           poly.setAttribute('fill', 'none');
           poly.setAttribute('stroke', team === 'blau' ? 'rgba(80,150,255,0.85)' : 'rgba(230,70,70,0.85)');
           poly.setAttribute('stroke-width', '2.5');
+          poly.setAttribute('class', 'hex-clickable');
+          poly.setAttribute('data-col', col);
+          poly.setAttribute('data-row', row);
+          poly.addEventListener('click', () => showHexPanel(col, row));
           svgHex.appendChild(poly);
 
           const hexKey = `${col}_${row}`;
           const armies = armyMap[hexKey];
           if (armies && armies.length > 0) {
-            // Sort armies by count descending (largest first)
             const sortedArmies = [...armies].sort((a, b) => b.count - a.count);
 
             const stack = document.createElement('div');
@@ -224,7 +374,6 @@
                 armyImg.src = `Equip${army.player}.jpg`;
                 armyImg.alt = `Jugador ${army.player}`;
                 
-                // Stack offset: first is centered, then offset up and to the right (half of original: 4px instead of 8px)
                 const offsetX = imageIndex * 4;
                 const offsetY = -imageIndex * 4;
                 
