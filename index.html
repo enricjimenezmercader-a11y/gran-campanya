@@ -94,6 +94,7 @@
       position: absolute;
       width: 30px;
       height: 30px;
+      pointer-events: none;
     }
 
     .army-image {
@@ -172,14 +173,6 @@
       color: #1a1208;
     }
 
-    .hex-clickable {
-      cursor: pointer;
-    }
-
-    .hex-clickable:hover {
-      opacity: 0.8;
-    }
-
     .overlay-backdrop {
       display: none;
       position: fixed;
@@ -237,7 +230,6 @@
 
     let teamMap = {};
     let armyMap = {};
-    let hexPositions = {};
 
     function parseGVizJSON(text) {
       const map = {};
@@ -277,28 +269,6 @@
         pts.push(`${cx + rv * Math.cos(angle)},${cy + rv * Math.sin(angle)}`);
       }
       return pts.join(' ');
-    }
-
-    function pointInPolygon(x, y, points) {
-      const pairs = points.split(' ').map(p => p.split(',').map(Number));
-      let inside = false;
-      for (let i = 0, j = pairs.length - 1; i < pairs.length; j = i++) {
-        const xi = pairs[i][0], yi = pairs[i][1];
-        const xj = pairs[j][0], yj = pairs[j][1];
-        const intersect = ((yi > y) !== (yj > y)) && (x < (xj - xi) * (y - yi) / (yj - yi) + xi);
-        if (intersect) inside = !inside;
-      }
-      return inside;
-    }
-
-    function getHexAtPoint(x, y) {
-      for (const [hexKey, points] of Object.entries(hexPositions)) {
-        if (pointInPolygon(x, y, points)) {
-          const [col, row] = hexKey.split('_').map(Number);
-          return { col, row };
-        }
-      }
-      return null;
     }
 
     function showHexPanel(col, row) {
@@ -359,7 +329,6 @@
       });
 
       armyOverlay.innerHTML = '';
-      hexPositions = {};
 
       const rW = W / (2 + 1.5 * (COLS - 1));
       const rH = H / (ROWS * Math.sqrt(3) + 1);
@@ -378,10 +347,6 @@
           const cy = vr + row * hexH + (col % 2 === 1 ? vr : 0);
           const pts = flatHexCorners(cx, cy, r - 1);
 
-          // Store hex position for click detection
-          const hexKey = `${col}_${row}`;
-          hexPositions[hexKey] = pts;
-
           if (team === 'blau') blueCount++;
           else if (team === 'vermell') redCount++;
 
@@ -390,10 +355,14 @@
           fill.setAttribute('points', pts);
           fill.setAttribute('fill', team === 'blau' ? 'rgba(60,120,220,0.22)' : 'rgba(210,50,50,0.22)');
           fill.setAttribute('stroke', 'none');
-          fill.setAttribute('class', 'hex-clickable');
-          fill.addEventListener('click', (e) => {
+          fill.setAttribute('data-col', col);
+          fill.setAttribute('data-row', row);
+          fill.style.cursor = 'pointer';
+          fill.addEventListener('click', function(e) {
             e.stopPropagation();
-            showHexPanel(col, row);
+            const c = parseInt(this.getAttribute('data-col'));
+            const r = parseInt(this.getAttribute('data-row'));
+            showHexPanel(c, r);
           });
           svgOwn.appendChild(fill);
 
@@ -407,6 +376,7 @@
           svgHex.appendChild(poly);
 
           // Armies
+          const hexKey = `${col}_${row}`;
           const armies = armyMap[hexKey];
           if (armies && armies.length > 0) {
             const sortedArmies = [...armies].sort((a, b) => b.count - a.count);
