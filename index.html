@@ -85,9 +85,8 @@
       pointer-events: none;
     }
 
-    #hex-overlay {
+    #ownership-overlay {
       pointer-events: auto;
-      cursor: pointer;
     }
 
     .army-stack {
@@ -192,7 +191,7 @@
 <body>
   <h1>Gran Campanya</h1>
   
-  <div class="overlay-backdrop" id="backdrop" onclick="closeSidePanel()"></div>
+  <div class="overlay-backdrop" id="backdrop"></div>
 
   <div class="main-container">
     <div class="map-frame">
@@ -272,15 +271,24 @@
     }
 
     function showHexPanel(col, row) {
+      console.log('showHexPanel called with col:', col, 'row:', row);
+      
       const hexKey = `${col}_${row}`;
       const team = teamOf(col, row);
       
-      if (!team) return;
+      console.log('hexKey:', hexKey, 'team:', team);
+      
+      if (!team) {
+        console.log('No team found for this hex');
+        return;
+      }
 
       hexName.textContent = hexKey;
       armyDetails.innerHTML = '';
 
       const armies = armyMap[hexKey];
+      console.log('armies:', armies);
+      
       if (armies && armies.length > 0) {
         const sortedArmies = [...armies].sort((a, b) => b.count - a.count);
         
@@ -313,11 +321,13 @@
     }
 
     function closeSidePanel() {
+      console.log('closeSidePanel called');
       sidePanel.classList.remove('active');
       backdrop.classList.remove('active');
     }
 
     function drawAll() {
+      console.log('drawAll called');
       const W = img.offsetWidth;
       const H = img.offsetHeight;
 
@@ -355,15 +365,17 @@
           fill.setAttribute('points', pts);
           fill.setAttribute('fill', team === 'blau' ? 'rgba(60,120,220,0.22)' : 'rgba(210,50,50,0.22)');
           fill.setAttribute('stroke', 'none');
-          fill.setAttribute('data-col', col);
-          fill.setAttribute('data-row', row);
           fill.style.cursor = 'pointer';
-          fill.addEventListener('click', function(e) {
-            e.stopPropagation();
-            const c = parseInt(this.getAttribute('data-col'));
-            const r = parseInt(this.getAttribute('data-row'));
-            showHexPanel(c, r);
-          });
+          
+          // Create closure to capture col and row
+          (function(c, r) {
+            fill.addEventListener('click', function(e) {
+              console.log('Hex clicked:', c, r);
+              e.stopPropagation();
+              showHexPanel(c, r);
+            });
+          })(col, row);
+          
           svgOwn.appendChild(fill);
 
           // Border
@@ -415,20 +427,30 @@
     }
 
     async function loadAndDraw() {
+      console.log('loadAndDraw called');
       try {
         const res = await fetch(SHEET_URL);
         if (!res.ok) throw new Error('HTTP ' + res.status);
         const text = await res.text();
         teamMap = parseGVizJSON(text);
+        console.log('teamMap loaded:', teamMap);
       } catch(e) {
-        console.warn('Error carregant el full:', e);
+        console.error('Error loading sheet:', e);
       }
-      if (img.complete) drawAll();
-      else img.addEventListener('load', drawAll);
+      if (img.complete) {
+        console.log('Image already loaded, calling drawAll');
+        drawAll();
+      } else {
+        console.log('Waiting for image to load');
+        img.addEventListener('load', drawAll);
+      }
     }
 
     loadAndDraw();
     window.addEventListener('resize', drawAll);
+
+    // Click on backdrop to close
+    backdrop.addEventListener('click', closeSidePanel);
   </script>
 
   <div style="display:flex;gap:2.5rem;margin-top:1rem;font-family:'UnifrakturMaguntia',cursive;font-size:1.15rem;text-shadow:1px 1px 3px #000;">
