@@ -79,15 +79,16 @@
 
     .army-stack {
       position: absolute;
-      width: 40px;
-      height: 40px;
+      width: 30px;
+      height: 30px;
     }
 
     .army-image {
       position: absolute;
-      width: 40px;
-      height: 40px;
+      width: 30px;
+      height: 30px;
       object-fit: contain;
+      filter: drop-shadow(2px 2px 3px rgba(0,0,0,0.6));
     }
   </style>
 </head>
@@ -207,27 +208,25 @@
           const hexKey = `${col}_${row}`;
           const armies = armyMap[hexKey];
           if (armies && armies.length > 0) {
-            let totalArmies = 0;
-            for (const army of armies) {
-              totalArmies += army.count;
-            }
+            // Sort armies by count descending (largest first)
+            const sortedArmies = [...armies].sort((a, b) => b.count - a.count);
 
             const stack = document.createElement('div');
             stack.className = 'army-stack';
-            stack.style.left = (cx - 20) + 'px';
-            stack.style.top = (cy - 20) + 'px';
+            stack.style.left = (cx - 15) + 'px';
+            stack.style.top = (cy - 15) + 'px';
 
             let imageIndex = 0;
-            for (const army of armies) {
+            for (const army of sortedArmies) {
               for (let i = 0; i < army.count; i++) {
                 const armyImg = document.createElement('img');
                 armyImg.className = 'army-image';
                 armyImg.src = `Equip${army.player}.jpg`;
                 armyImg.alt = `Jugador ${army.player}`;
                 
-                // Stack offset: first is centered, then offset up and to the right
-                const offsetX = imageIndex * 8;
-                const offsetY = -imageIndex * 8;
+                // Stack offset: first is centered, then offset up and to the right (half of original: 4px instead of 8px)
+                const offsetX = imageIndex * 4;
+                const offsetY = -imageIndex * 4;
                 
                 armyImg.style.left = offsetX + 'px';
                 armyImg.style.top = offsetY + 'px';
