@@ -104,6 +104,21 @@
       filter: drop-shadow(2px 2px 3px rgba(0,0,0,0.6));
     }
 
+    .army-count {
+      position: absolute;
+      width: 30px;
+      height: 30px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 14px;
+      font-weight: bold;
+      color: #fff;
+      text-shadow: 1px 1px 3px rgba(0,0,0,0.9), -1px -1px 3px rgba(0,0,0,0.9);
+      z-index: 2000;
+      pointer-events: none;
+    }
+
     .side-panel {
       position: fixed;
       right: 0;
@@ -394,6 +409,9 @@
             // Sort by count descending so the largest is first
             const sortedArmies = [...armies].sort((a, b) => b.count - a.count);
 
+            // Calculate total armies
+            const totalArmies = sortedArmies.reduce((sum, a) => sum + a.count, 0);
+
             const stack = document.createElement('div');
             stack.className = 'army-stack';
             stack.style.left = (cx - 15) + 'px';
@@ -407,9 +425,9 @@
                 armyImg.src = `Equip${army.player}.jpg`;
                 armyImg.alt = `Jugador ${army.player}`;
                 
-                // Stack offset: first is centered, then each next is offset up and right
-                const offsetX = imageIndex * 4;
-                const offsetY = -imageIndex * 4;
+                // Stack offset: offset down and to the left (inverted perspective)
+                const offsetX = -imageIndex * 4;
+                const offsetY = imageIndex * 4;
                 
                 armyImg.style.left = offsetX + 'px';
                 armyImg.style.top = offsetY + 'px';
@@ -420,6 +438,13 @@
                 imageIndex++;
               }
             }
+
+            // Add total count label on top
+            const countLabel = document.createElement('div');
+            countLabel.className = 'army-count';
+            countLabel.textContent = totalArmies;
+            stack.appendChild(countLabel);
+
             armyOverlay.appendChild(stack);
           }
         }
