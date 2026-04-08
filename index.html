@@ -78,7 +78,7 @@
       height: auto;
     }
 
-    #ownership-overlay, #hex-overlay, #army-overlay {
+    #ownership-overlay, #hex-overlay, #army-overlay, #explosion-overlay {
       position: absolute;
       top: 0; left: 0;
       width: 100%; height: 100%;
@@ -96,12 +96,22 @@
       pointer-events: none;
     }
 
+    .army-stack.conflict {
+      width: 15px;
+      height: 15px;
+    }
+
     .army-image {
       position: absolute;
       width: 30px;
       height: 30px;
       object-fit: contain;
       filter: drop-shadow(2px 2px 3px rgba(0,0,0,0.6));
+    }
+
+    .army-stack.conflict .army-image {
+      width: 15px;
+      height: 15px;
     }
 
     .army-count {
@@ -113,12 +123,25 @@
       justify-content: center;
       font-size: 14px;
       font-weight: bold;
-      color: #fff;
       text-shadow: 1px 1px 3px rgba(0,0,0,0.9), -1px -1px 3px rgba(0,0,0,0.9);
       z-index: 2000;
       pointer-events: none;
       left: 0;
       top: 0;
+    }
+
+    .army-stack.conflict .army-count {
+      width: 15px;
+      height: 15px;
+      font-size: 8px;
+    }
+
+    .explosion-img {
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      opacity: 0.5;
+      pointer-events: none;
     }
 
     .side-panel {
@@ -218,6 +241,7 @@
         <img id="mapImg" src="map.jpg">
         <svg id="ownership-overlay"></svg>
         <svg id="hex-overlay"></svg>
+        <div id="explosion-overlay"></div>
         <div id="army-overlay"></div>
       </div>
     </div>
@@ -233,6 +257,7 @@
     const img    = document.getElementById('mapImg');
     const svgOwn = document.getElementById('ownership-overlay');
     const svgHex = document.getElementById('hex-overlay');
+    const explosionOverlay = document.getElementById('explosion-overlay');
     const armyOverlay = document.getElementById('army-overlay');
     const sidePanel = document.getElementById('sidePanel');
     const backdrop = document.getElementById('backdrop');
@@ -246,6 +271,15 @@
 
     let teamMap = {};
     let armyMap = {};
+
+    function getTeamColor(player) {
+      // Players 1-3 are blue (indices 0-2), players 4-6 are red (indices 3-5)
+      return player <= 2 ? 'blau' : 'vermell';
+    }
+
+    function getTeamTextColor(player) {
+      return player <= 2 ? '#5a96ff' : '#ff4a4a';
+    }
 
     function parseGVizJSON(text) {
       const map = {};
@@ -343,6 +377,56 @@
       backdrop.classList.remove('active');
     }
 
+    function createArmyStack(armies, scale = 1, offsetX = 0, offsetY = 0) {
+      const sortedArmies = [...armies].sort((a, b) => b.count - a.count);
+      const totalArmies = sortedArmies.reduce((sum, a) => sum + a.count, 0);
+
+      const stack = document.createElement('div');
+      stack.className = scale === 0.5 ? 'army-stack conflict' : 'army-stack';
+      stack.style.left = (offsetX - 15 * scale) + 'px';
+      stack.style.top = (offsetY - 15 * scale) + 'px';
+      stack.style.width = (30 * scale) + 'px';
+      stack.style.height = (30 * scale) + 'px';
+
+      let imageIndex = 0;
+      for (const army of sortedArmies) {
+        for (let i = 0; i < army.count; i++) {
+          const armyImg = document.createElement('img');
+          armyImg.className = 'army-image';
+          armyImg.src = `Equip${army.player}.jpg`;
+          armyImg.alt = `Jugador ${army.player}`;
+          
+          const offsetXStack = -imageIndex * 4 * scale;
+          const offsetYStack = imageIndex * 4 * scale;
+          
+          armyImg.style.left = offsetXStack + 'px';
+          armyImg.style.top = offsetYStack + 'px';
+          armyImg.style.width = (30 * scale) + 'px';
+          armyImg.style.height = (30 * scale) + 'px';
+          armyImg.style.zIndex = 1000 - imageIndex;
+          
+          stack.appendChild(armyImg);
+          imageIndex++;
+        }
+      }
+
+      // Add total count label
+      const countLabel = document.createElement('div');
+      countLabel.className = 'army-count';
+      countLabel.style.width = (30 * scale) + 'px';
+      countLabel.style.height = (30 * scale) + 'px';
+      countLabel.style.fontSize = (14 * scale) + 'px';
+      
+      // Determine color based on team
+      const teamColor = getTeamTextColor(sortedArmies[0].player);
+      countLabel.style.color = teamColor;
+      countLabel.textContent = totalArmies;
+      
+      stack.appendChild(countLabel);
+      
+      return stack;
+    }
+
     function drawAll() {
       console.log('drawAll called');
       const W = img.offsetWidth;
@@ -355,6 +439,7 @@
         s.innerHTML = '';
       });
 
+      explosionOverlay.innerHTML = '';
       armyOverlay.innerHTML = '';
 
       const rW = W / (2 + 1.5 * (COLS - 1));
@@ -384,7 +469,6 @@
           fill.setAttribute('stroke', 'none');
           fill.style.cursor = 'pointer';
           
-          // Create closure to capture col and row
           (function(c, r) {
             fill.addEventListener('click', function(e) {
               console.log('Hex clicked:', c, r);
@@ -408,46 +492,43 @@
           const hexKey = `${col}_${row}`;
           const armies = armyMap[hexKey];
           if (armies && armies.length > 0) {
-            // Sort by count descending so the largest is first
-            const sortedArmies = [...armies].sort((a, b) => b.count - a.count);
+            // Check if there are armies from both teams
+            const blueArmies = armies.filter(a => a.player <= 2);
+            const redArmies = armies.filter(a => a.player > 2);
+            const hasConflict = blueArmies.length > 0 && redArmies.length > 0;
 
-            // Calculate total armies
-            const totalArmies = sortedArmies.reduce((sum, a) => sum + a.count, 0);
+            if (hasConflict) {
+              // Add explosion image
+              const explosionContainer = document.createElement('div');
+              explosionContainer.style.position = 'absolute';
+              explosionContainer.style.left = (cx - r * 0.7) + 'px';
+              explosionContainer.style.top = (cy - r * 0.7) + 'px';
+              explosionContainer.style.width = (r * 1.4) + 'px';
+              explosionContainer.style.height = (r * 1.4) + 'px';
+              explosionContainer.style.pointerEvents = 'none';
+              
+              const explosionImg = document.createElement('img');
+              explosionImg.src = 'explosion.png';
+              explosionImg.style.width = '100%';
+              explosionImg.style.height = '100%';
+              explosionImg.style.opacity = '0.5';
+              explosionImg.style.objectFit = 'contain';
+              
+              explosionContainer.appendChild(explosionImg);
+              explosionOverlay.appendChild(explosionContainer);
 
-            const stack = document.createElement('div');
-            stack.className = 'army-stack';
-            stack.style.left = (cx - 15) + 'px';
-            stack.style.top = (cy - 15) + 'px';
+              // Blue team stack (left)
+              const blueStack = createArmyStack(blueArmies, 0.5, cx - 15, cy);
+              armyOverlay.appendChild(blueStack);
 
-            let imageIndex = 0;
-            for (const army of sortedArmies) {
-              for (let i = 0; i < army.count; i++) {
-                const armyImg = document.createElement('img');
-                armyImg.className = 'army-image';
-                armyImg.src = `Equip${army.player}.jpg`;
-                armyImg.alt = `Jugador ${army.player}`;
-                
-                // Stack offset: first one (largest) is at 0,0 (centered), then offset down and left
-                const offsetX = -imageIndex * 4;
-                const offsetY = imageIndex * 4;
-                
-                armyImg.style.left = offsetX + 'px';
-                armyImg.style.top = offsetY + 'px';
-                // Most important: set z-index so largest count appears on TOP
-                armyImg.style.zIndex = 1000 - imageIndex;
-                
-                stack.appendChild(armyImg);
-                imageIndex++;
-              }
+              // Red team stack (right)
+              const redStack = createArmyStack(redArmies, 0.5, cx + 15, cy);
+              armyOverlay.appendChild(redStack);
+            } else {
+              // Single team, normal display
+              const stack = createArmyStack(armies, 1, cx, cy);
+              armyOverlay.appendChild(stack);
             }
-
-            // Add total count label on top
-            const countLabel = document.createElement('div');
-            countLabel.className = 'army-count';
-            countLabel.textContent = totalArmies;
-            stack.appendChild(countLabel);
-
-            armyOverlay.appendChild(stack);
           }
         }
       }
