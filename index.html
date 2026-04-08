@@ -20,24 +20,24 @@
 
     h1 {
       font-family: 'UnifrakturMaguntia', cursive;
-      font-size: clamp(2rem, 5vw, 4rem);
+      font-size: clamp(2.5rem, 6.25vw, 5rem);
       color: #c9a84c;
       letter-spacing: 0.08em;
       text-shadow: 0 0 12px rgba(201,168,76,0.7), 2px 2px 4px #000;
-      margin-bottom: 1.2rem;
+      margin-bottom: 1.5rem;
       text-align: center;
     }
 
     .main-container {
       display: flex;
-      gap: 2rem;
+      gap: 2.5rem;
       align-items: stretch;
       position: relative;
     }
 
     .map-frame {
-      border: 6px solid #7a5c1e;
-      box-shadow: 0 0 0 2px #3a2a08, 0 0 30px rgba(201,168,76,0.25), inset 0 0 20px rgba(0,0,0,0.5);
+      border: 7.5px solid #7a5c1e;
+      box-shadow: 0 0 0 2.5px #3a2a08, 0 0 30px rgba(201,168,76,0.25), inset 0 0 20px rgba(0,0,0,0.5);
       position: relative;
       display: inline-block;
       background: #1a1208;
@@ -47,20 +47,20 @@
     .map-frame::before, .map-frame::after {
       content: '';
       position: absolute;
-      width: 22px; height: 22px;
+      width: 27.5px; height: 27.5px;
       background: #c9a84c;
       clip-path: polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%);
       z-index: 2;
     }
-    .map-frame::before { top: -13px; left: -13px; }
-    .map-frame::after  { bottom: -13px; right: -13px; }
+    .map-frame::before { top: -16.25px; left: -16.25px; }
+    .map-frame::after  { bottom: -16.25px; right: -16.25px; }
 
-    .corner-tr { top: -13px; right: -13px; }
-    .corner-bl { bottom: -13px; left: -13px; }
+    .corner-tr { top: -16.25px; right: -16.25px; }
+    .corner-bl { bottom: -16.25px; left: -16.25px; }
 
     .corner-tr, .corner-bl {
       position: absolute;
-      width: 22px; height: 22px;
+      width: 27.5px; height: 27.5px;
       background: #c9a84c;
       clip-path: polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%);
       z-index: 2;
@@ -74,7 +74,7 @@
 
     .map-wrapper img {
       display: block;
-      max-width: 60vw;
+      max-width: 75vw;
       height: auto;
     }
 
@@ -91,37 +91,37 @@
 
     .army-stack {
       position: absolute;
-      width: 30px;
-      height: 30px;
+      width: 37.5px;
+      height: 37.5px;
       pointer-events: none;
     }
 
     .army-stack.conflict {
-      width: 15px;
-      height: 15px;
+      width: 18.75px;
+      height: 18.75px;
     }
 
     .army-image {
       position: absolute;
-      width: 30px;
-      height: 30px;
+      width: 37.5px;
+      height: 37.5px;
       object-fit: contain;
       filter: drop-shadow(2px 2px 3px rgba(0,0,0,0.6));
     }
 
     .army-stack.conflict .army-image {
-      width: 15px;
-      height: 15px;
+      width: 18.75px;
+      height: 18.75px;
     }
 
     .army-count {
       position: absolute;
-      width: 30px;
-      height: 30px;
+      width: 37.5px;
+      height: 37.5px;
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 14px;
+      font-size: 17.5px;
       font-weight: bold;
       text-shadow: 1px 1px 3px rgba(0,0,0,0.9), -1px -1px 3px rgba(0,0,0,0.9);
       z-index: 2000;
@@ -129,9 +129,9 @@
     }
 
     .army-stack.conflict .army-count {
-      width: 15px;
-      height: 15px;
-      font-size: 8px;
+      width: 18.75px;
+      height: 18.75px;
+      font-size: 10px;
     }
 
     .side-panel {
@@ -455,12 +455,16 @@
       backdrop.classList.remove('active');
     }
 
-    function createArmyStack(armies, scale = 1, centerX = 0, centerY = 0) {
+    function createArmyStack(armies, scale = 1, centerX = 0, centerY = 0, hasConflict = false) {
       // Sort by count ASCENDING so smallest is first (drawn first, behind)
       const sortedArmies = [...armies].sort((a, b) => a.count - b.count);
       const totalArmies = sortedArmies.reduce((sum, a) => sum + a.count, 0);
 
-      const stackSize = 30 * scale;
+      // When there's conflict, armies are 50% bigger, but for conflict stacks we're already at 0.5 scale
+      // So we need to increase the base size: normal is 37.5px, conflict should be 28.125px (half of 56.25px)
+      let stackSize = hasConflict ? 56.25 : 37.5;
+      if (scale === 0.5) stackSize *= scale;
+
       const stack = document.createElement('div');
       stack.className = scale === 0.5 ? 'army-stack conflict' : 'army-stack';
       stack.style.width = stackSize + 'px';
@@ -477,14 +481,14 @@
           armyImg.alt = `Jugador ${army.player + 1}`;
           
           // Stack: each image is placed up-right so next one partially covers it
-          const offsetX = imageIndex * 4 * scale;
-          const offsetY = -imageIndex * 4 * scale;
+          const offsetX = imageIndex * 5 * scale;
+          const offsetY = -imageIndex * 5 * scale;
           
           armyImg.style.left = offsetX + 'px';
           armyImg.style.top = offsetY + 'px';
           armyImg.style.width = stackSize + 'px';
           armyImg.style.height = stackSize + 'px';
-          armyImg.style.zIndex = imageIndex; // Increasing z-index so last (largest) is on top
+          armyImg.style.zIndex = imageIndex;
           
           stack.appendChild(armyImg);
           imageIndex++;
@@ -496,12 +500,11 @@
       countLabel.className = 'army-count';
       countLabel.style.width = stackSize + 'px';
       countLabel.style.height = stackSize + 'px';
-      countLabel.style.fontSize = (14 * scale) + 'px';
+      countLabel.style.fontSize = (17.5 * scale) + 'px';
       countLabel.style.color = getTeamTextColor(sortedArmies[sortedArmies.length - 1].player);
-      countLabel.style.zIndex = imageIndex + 1; // Above all armies
-      // Position at the rightmost army location
-      countLabel.style.left = ((imageIndex - 1) * 4 * scale) + 'px';
-      countLabel.style.top = (-(imageIndex - 1) * 4 * scale) + 'px';
+      countLabel.style.zIndex = imageIndex + 1;
+      countLabel.style.left = ((imageIndex - 1) * 5 * scale) + 'px';
+      countLabel.style.top = (-(imageIndex - 1) * 5 * scale) + 'px';
       countLabel.textContent = totalArmies;
       
       stack.appendChild(countLabel);
@@ -592,13 +595,15 @@
               explosionContainer.appendChild(explosionImg);
               explosionOverlay.appendChild(explosionContainer);
 
-              const blueStack = createArmyStack(blueArmies, 0.5, cx - r * 0.5, cy);
+              // For conflict: armies are displayed at 50% scale but 50% bigger (75% of full size)
+              // This is achieved by: scale=0.5 but stackSize is 56.25 * 0.5 = 28.125px (vs normal 37.5 * 0.5 = 18.75px)
+              const blueStack = createArmyStack(blueArmies, 0.5, cx - r * 0.5, cy, true);
               armyOverlay.appendChild(blueStack);
 
-              const redStack = createArmyStack(redArmies, 0.5, cx + r * 0.5, cy);
+              const redStack = createArmyStack(redArmies, 0.5, cx + r * 0.5, cy, true);
               armyOverlay.appendChild(redStack);
             } else {
-              const stack = createArmyStack(armies, 1, cx, cy);
+              const stack = createArmyStack(armies, 1, cx, cy, false);
               armyOverlay.appendChild(stack);
             }
           }
@@ -630,7 +635,7 @@
     backdrop.addEventListener('click', closeSidePanel);
   </script>
 
-  <div style="display:flex;gap:2.5rem;margin-top:1rem;font-family:'UnifrakturMaguntia',cursive;font-size:1.15rem;text-shadow:1px 1px 3px #000;">
+  <div style="display:flex;gap:2.5rem;margin-top:1.25rem;font-family:'UnifrakturMaguntia',cursive;font-size:1.4375rem;text-shadow:1px 1px 3px #000;">
     <span style="color:#4a96ff;">&#9632; Equip Blau &mdash; <span id="blue-count">27</span> hex</span>
     <span style="color:#e64646;">&#9632; Equip Vermell &mdash; <span id="red-count">27</span> hex</span>
   </div>
