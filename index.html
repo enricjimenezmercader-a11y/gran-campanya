@@ -91,7 +91,14 @@
 
     .army-stack {
       position: absolute;
+      width: 30px;
+      height: 30px;
       pointer-events: none;
+    }
+
+    .army-stack.conflict {
+      width: 15px;
+      height: 15px;
     }
 
     .army-image {
@@ -462,8 +469,8 @@
       const stackSize = 30 * scale;
       const stack = document.createElement('div');
       stack.className = scale === 0.5 ? 'army-stack conflict' : 'army-stack';
-      
-      // Position stack so the container center is at (centerX, centerY)
+      stack.style.width = stackSize + 'px';
+      stack.style.height = stackSize + 'px';
       stack.style.left = (centerX - stackSize / 2) + 'px';
       stack.style.top = (centerY - stackSize / 2) + 'px';
 
@@ -475,14 +482,12 @@
           armyImg.src = `Equip${army.player}.jpg`;
           armyImg.alt = `Jugador ${army.player + 1}`;
           
-          // Stack upward and to the right: 
-          // First image (largest, at bottom) is at (0, 0) relative to stack center
-          // Each subsequent image offsets up-right
-          const offsetXStack = imageIndex * 4 * scale;
-          const offsetYStack = -imageIndex * 4 * scale;
+          // Stack goes down and to the left from center
+          const offsetX = -imageIndex * 4 * scale;
+          const offsetY = imageIndex * 4 * scale;
           
-          armyImg.style.left = (offsetXStack - stackSize / 2) + 'px';
-          armyImg.style.top = (offsetYStack - stackSize / 2) + 'px';
+          armyImg.style.left = offsetX + 'px';
+          armyImg.style.top = offsetY + 'px';
           armyImg.style.width = stackSize + 'px';
           armyImg.style.height = stackSize + 'px';
           armyImg.style.zIndex = 1000 - imageIndex;
@@ -492,17 +497,13 @@
         }
       }
 
-      // Add total count label at the center
+      // Add total count label
       const countLabel = document.createElement('div');
       countLabel.className = 'army-count';
       countLabel.style.width = stackSize + 'px';
       countLabel.style.height = stackSize + 'px';
       countLabel.style.fontSize = (14 * scale) + 'px';
-      countLabel.style.left = (-stackSize / 2) + 'px';
-      countLabel.style.top = (-stackSize / 2) + 'px';
-      
-      const teamColor = getTeamTextColor(sortedArmies[0].player);
-      countLabel.style.color = teamColor;
+      countLabel.style.color = getTeamTextColor(sortedArmies[0].player);
       countLabel.textContent = totalArmies;
       
       stack.appendChild(countLabel);
