@@ -391,6 +391,7 @@
           const hexKey = `${col}_${row}`;
           const armies = armyMap[hexKey];
           if (armies && armies.length > 0) {
+            // Sort by count descending so the largest is first
             const sortedArmies = [...armies].sort((a, b) => b.count - a.count);
 
             const stack = document.createElement('div');
@@ -406,12 +407,14 @@
                 armyImg.src = `Equip${army.player}.jpg`;
                 armyImg.alt = `Jugador ${army.player}`;
                 
+                // Stack offset: first is centered, then each next is offset up and right
                 const offsetX = imageIndex * 4;
                 const offsetY = -imageIndex * 4;
                 
                 armyImg.style.left = offsetX + 'px';
                 armyImg.style.top = offsetY + 'px';
-                armyImg.style.zIndex = imageIndex;
+                // Most important: set z-index so largest count appears on TOP
+                armyImg.style.zIndex = 1000 - imageIndex;
                 
                 stack.appendChild(armyImg);
                 imageIndex++;
