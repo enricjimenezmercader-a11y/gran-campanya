@@ -117,6 +117,8 @@
       text-shadow: 1px 1px 3px rgba(0,0,0,0.9), -1px -1px 3px rgba(0,0,0,0.9);
       z-index: 2000;
       pointer-events: none;
+      left: 0;
+      top: 0;
     }
 
     .side-panel {
@@ -425,7 +427,7 @@
                 armyImg.src = `Equip${army.player}.jpg`;
                 armyImg.alt = `Jugador ${army.player}`;
                 
-                // Stack offset: offset down and to the left (inverted perspective)
+                // Stack offset: first one (largest) is at 0,0 (centered), then offset down and left
                 const offsetX = -imageIndex * 4;
                 const offsetY = imageIndex * 4;
                 
