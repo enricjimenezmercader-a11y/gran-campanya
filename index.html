@@ -478,9 +478,9 @@
           armyImg.src = `Equip${army.player}.jpg`;
           armyImg.alt = `Jugador ${army.player + 1}`;
           
-          // Stack: each image is placed down-left so next one partially covers it
-          const offsetX = -imageIndex * 4 * scale;
-          const offsetY = imageIndex * 4 * scale;
+          // Stack: each image is placed up-right so next one partially covers it
+          const offsetX = imageIndex * 4 * scale;
+          const offsetY = -imageIndex * 4 * scale;
           
           armyImg.style.left = offsetX + 'px';
           armyImg.style.top = offsetY + 'px';
@@ -493,7 +493,7 @@
         }
       }
 
-      // Add total count label on top of the largest army
+      // Add total count label on top of the largest army (last one)
       const countLabel = document.createElement('div');
       countLabel.className = 'army-count';
       countLabel.style.width = stackSize + 'px';
