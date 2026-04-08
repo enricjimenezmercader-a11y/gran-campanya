@@ -316,11 +316,11 @@
 
     function getPlayerTeam(player) {
       // Players 0-2 are blue (Jugador 1-3), players 3-5 are red (Jugador 4-6)
-      return player <= 2 ? 'blue' : 'red';
+      return player < 3 ? 'blue' : 'red';
     }
 
     function getTeamTextColor(player) {
-      return player <= 2 ? '#5a96ff' : '#ff4a4a';
+      return player < 3 ? '#5a96ff' : '#ff4a4a';
     }
 
     function parseGVizJSON(text) {
@@ -336,10 +336,11 @@
         if (hex) {
           map[hex] = team;
           armyData[hex] = [];
-          for (let i = 2; i <= 7; i++) {
-            const count = row.c[i] ? parseInt(row.c[i].v || 0) : 0;
+          // Columns 2-7 are armies for Jugador 1-6 (players 0-5)
+          for (let i = 0; i < 6; i++) {
+            const count = row.c[i + 2] ? parseInt(row.c[i + 2].v || 0) : 0;
             if (count > 0) {
-              armyData[hex].push({ player: i - 1, count: count });
+              armyData[hex].push({ player: i, count: count });
             }
           }
         }
@@ -384,8 +385,8 @@
       
       if (armies && armies.length > 0) {
         // Group armies by team
-        const blueArmies = armies.filter(a => a.player <= 2).sort((a, b) => a.player - b.player);
-        const redArmies = armies.filter(a => a.player > 2).sort((a, b) => a.player - b.player);
+        const blueArmies = armies.filter(a => a.player < 3).sort((a, b) => a.player - b.player);
+        const redArmies = armies.filter(a => a.player >= 3).sort((a, b) => a.player - b.player);
         
         const blueTotal = blueArmies.reduce((sum, a) => sum + a.count, 0);
         const redTotal = redArmies.reduce((sum, a) => sum + a.count, 0);
@@ -485,18 +486,19 @@
       backdrop.classList.remove('active');
     }
 
-    function createArmyStack(armies, scale = 1, offsetX = 0, offsetY = 0) {
+    function createArmyStack(armies, scale = 1, centerX = 0, centerY = 0) {
       const sortedArmies = [...armies].sort((a, b) => b.count - a.count);
       const totalArmies = sortedArmies.reduce((sum, a) => sum + a.count, 0);
 
+      const stackSize = 30 * scale;
       const stack = document.createElement('div');
       stack.className = scale === 0.5 ? 'army-stack conflict' : 'army-stack';
-      
-      const stackSize = 30 * scale;
       stack.style.width = stackSize + 'px';
       stack.style.height = stackSize + 'px';
-      stack.style.left = (offsetX - stackSize / 2) + 'px';
-      stack.style.top = (offsetY - stackSize / 2) + 'px';
+      
+      // Position the stack container so that the first image (at 0,0 relative) is centered at (centerX, centerY)
+      stack.style.left = (centerX - stackSize / 2) + 'px';
+      stack.style.top = (centerY - stackSize / 2) + 'px';
 
       let imageIndex = 0;
       for (const army of sortedArmies) {
@@ -506,7 +508,8 @@
           armyImg.src = `Equip${army.player}.jpg`;
           armyImg.alt = `Jugador ${army.player + 1}`;
           
-          // First image is at center (0,0), rest stack down-left
+          // Stack perspective: images go down-left (increasing index = further down-left)
+          // offset = imageIndex * 4 * scale in both directions (down and left)
           const offsetXStack = -imageIndex * 4 * scale;
           const offsetYStack = imageIndex * 4 * scale;
           
@@ -521,7 +524,7 @@
         }
       }
 
-      // Add total count label
+      // Add total count label at the center (on top of first image)
       const countLabel = document.createElement('div');
       countLabel.className = 'army-count';
       countLabel.style.width = stackSize + 'px';
@@ -603,8 +606,8 @@
           const armies = armyMap[hexKey];
           if (armies && armies.length > 0) {
             // Check if there are armies from both teams
-            const blueArmies = armies.filter(a => a.player <= 2);
-            const redArmies = armies.filter(a => a.player > 2);
+            const blueArmies = armies.filter(a => a.player < 3);
+            const redArmies = armies.filter(a => a.player >= 3);
             const hasConflict = blueArmies.length > 0 && redArmies.length > 0;
 
             if (hasConflict) {
