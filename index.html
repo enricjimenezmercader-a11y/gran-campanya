@@ -482,9 +482,9 @@
           armyImg.src = `Equip${army.player}.jpg`;
           armyImg.alt = `Jugador ${army.player + 1}`;
           
-          // Stack goes down and to the left from center
-          const offsetX = -imageIndex * 4 * scale;
-          const offsetY = imageIndex * 4 * scale;
+          // Stack goes UP and to the RIGHT from center
+          const offsetX = imageIndex * 4 * scale;
+          const offsetY = -imageIndex * 4 * scale;
           
           armyImg.style.left = offsetX + 'px';
           armyImg.style.top = offsetY + 'px';
