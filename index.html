@@ -140,7 +140,7 @@
       position: absolute;
       width: 100%;
       height: 100%;
-      opacity: 0.5;
+      opacity: 0.75;
       pointer-events: none;
     }
 
@@ -174,24 +174,66 @@
       padding-bottom: 1rem;
     }
 
-    .army-info {
-      margin: 1rem 0;
-      padding: 0.8rem;
-      background: rgba(201,168,76,0.1);
-      border-left: 3px solid #c9a84c;
+    .team-section {
+      margin-bottom: 1.5rem;
+      padding: 1rem;
+      background: rgba(201,168,76,0.05);
+      border-left: 4px solid;
       border-radius: 4px;
     }
 
-    .army-info-label {
+    .team-section.blue {
+      border-color: #5a96ff;
+    }
+
+    .team-section.red {
+      border-color: #ff4a4a;
+    }
+
+    .team-section h3 {
+      font-size: 1.2rem;
+      margin-bottom: 0.8rem;
+      font-weight: bold;
+    }
+
+    .team-section.blue h3 {
+      color: #5a96ff;
+    }
+
+    .team-section.red h3 {
+      color: #ff4a4a;
+    }
+
+    .army-info {
+      margin: 0.5rem 0;
+      padding: 0.6rem;
+      background: rgba(201,168,76,0.1);
+      border-radius: 3px;
       font-size: 0.9rem;
+      display: flex;
+      justify-content: space-between;
+    }
+
+    .army-info-label {
       opacity: 0.8;
-      margin-bottom: 0.3rem;
     }
 
     .army-info-value {
-      font-size: 1.3rem;
       font-weight: bold;
       color: #fff;
+    }
+
+    .total-info {
+      margin-top: 1.5rem;
+      padding: 0.8rem;
+      background: rgba(201,168,76,0.15);
+      border: 2px solid #c9a84c;
+      border-radius: 4px;
+    }
+
+    .total-info .army-info {
+      background: none;
+      margin: 0.3rem 0;
     }
 
     .close-btn {
@@ -272,9 +314,9 @@
     let teamMap = {};
     let armyMap = {};
 
-    function getTeamColor(player) {
-      // Players 1-3 are blue (indices 0-2), players 4-6 are red (indices 3-5)
-      return player <= 2 ? 'blau' : 'vermell';
+    function getPlayerTeam(player) {
+      // Players 0-2 are blue (Jugador 1-3), players 3-5 are red (Jugador 4-6)
+      return player <= 2 ? 'blue' : 'red';
     }
 
     function getTeamTextColor(player) {
@@ -341,27 +383,93 @@
       console.log('armies:', armies);
       
       if (armies && armies.length > 0) {
-        const sortedArmies = [...armies].sort((a, b) => b.count - a.count);
+        // Group armies by team
+        const blueArmies = armies.filter(a => a.player <= 2).sort((a, b) => a.player - b.player);
+        const redArmies = armies.filter(a => a.player > 2).sort((a, b) => a.player - b.player);
         
-        for (const army of sortedArmies) {
-          const div = document.createElement('div');
-          div.className = 'army-info';
-          div.innerHTML = `
-            <div class="army-info-label">Jugador ${army.player}</div>
-            <div class="army-info-value">${army.count} armies</div>
-          `;
-          armyDetails.appendChild(div);
+        const blueTotal = blueArmies.reduce((sum, a) => sum + a.count, 0);
+        const redTotal = redArmies.reduce((sum, a) => sum + a.count, 0);
+
+        // Blue team section
+        if (blueArmies.length > 0) {
+          const blueSection = document.createElement('div');
+          blueSection.className = 'team-section blue';
+          
+          const blueTitle = document.createElement('h3');
+          blueTitle.textContent = 'Equip Blau';
+          blueSection.appendChild(blueTitle);
+          
+          for (const army of blueArmies) {
+            const div = document.createElement('div');
+            div.className = 'army-info';
+            div.innerHTML = `
+              <span class="army-info-label">Jugador ${army.player + 1}</span>
+              <span class="army-info-value">${army.count}</span>
+            `;
+            blueSection.appendChild(div);
+          }
+          
+          armyDetails.appendChild(blueSection);
         }
 
+        // Red team section
+        if (redArmies.length > 0) {
+          const redSection = document.createElement('div');
+          redSection.className = 'team-section red';
+          
+          const redTitle = document.createElement('h3');
+          redTitle.textContent = 'Equip Vermell';
+          redSection.appendChild(redTitle);
+          
+          for (const army of redArmies) {
+            const div = document.createElement('div');
+            div.className = 'army-info';
+            div.innerHTML = `
+              <span class="army-info-label">Jugador ${army.player + 1}</span>
+              <span class="army-info-value">${army.count}</span>
+            `;
+            redSection.appendChild(div);
+          }
+          
+          armyDetails.appendChild(redSection);
+        }
+
+        // Total section
         const totalDiv = document.createElement('div');
-        totalDiv.className = 'army-info';
-        totalDiv.style.marginTop = '1.5rem';
-        totalDiv.style.borderLeft = '3px solid #fff';
-        const totalCount = sortedArmies.reduce((sum, a) => sum + a.count, 0);
-        totalDiv.innerHTML = `
-          <div class="army-info-label">Total</div>
-          <div class="army-info-value">${totalCount} armies</div>
+        totalDiv.className = 'total-info';
+        
+        if (blueTotal > 0) {
+          const blueTotalDiv = document.createElement('div');
+          blueTotalDiv.className = 'army-info';
+          blueTotalDiv.innerHTML = `
+            <span class="army-info-label" style="color: #5a96ff;">Equip Blau</span>
+            <span class="army-info-value" style="color: #5a96ff;">${blueTotal}</span>
+          `;
+          totalDiv.appendChild(blueTotalDiv);
+        }
+        
+        if (redTotal > 0) {
+          const redTotalDiv = document.createElement('div');
+          redTotalDiv.className = 'army-info';
+          redTotalDiv.innerHTML = `
+            <span class="army-info-label" style="color: #ff4a4a;">Equip Vermell</span>
+            <span class="army-info-value" style="color: #ff4a4a;">${redTotal}</span>
+          `;
+          totalDiv.appendChild(redTotalDiv);
+        }
+
+        const grandTotalDiv = document.createElement('div');
+        grandTotalDiv.className = 'army-info';
+        grandTotalDiv.style.marginTop = '0.5rem';
+        grandTotalDiv.style.borderTop = '1px solid #c9a84c';
+        grandTotalDiv.style.paddingTop = '0.5rem';
+        const grandTotal = blueTotal + redTotal;
+        grandTotalDiv.innerHTML = `
+          <span class="army-info-label">Total</span>
+          <span class="army-info-value">${grandTotal}</span>
         `;
+        totalDiv.appendChild(grandTotalDiv);
+        
         armyDetails.appendChild(totalDiv);
       } else {
         armyDetails.innerHTML = '<div class="army-info"><div class="army-info-label">No armies</div></div>';
@@ -383,10 +491,12 @@
 
       const stack = document.createElement('div');
       stack.className = scale === 0.5 ? 'army-stack conflict' : 'army-stack';
-      stack.style.left = (offsetX - 15 * scale) + 'px';
-      stack.style.top = (offsetY - 15 * scale) + 'px';
-      stack.style.width = (30 * scale) + 'px';
-      stack.style.height = (30 * scale) + 'px';
+      
+      const stackSize = 30 * scale;
+      stack.style.width = stackSize + 'px';
+      stack.style.height = stackSize + 'px';
+      stack.style.left = (offsetX - stackSize / 2) + 'px';
+      stack.style.top = (offsetY - stackSize / 2) + 'px';
 
       let imageIndex = 0;
       for (const army of sortedArmies) {
@@ -394,15 +504,16 @@
           const armyImg = document.createElement('img');
           armyImg.className = 'army-image';
           armyImg.src = `Equip${army.player}.jpg`;
-          armyImg.alt = `Jugador ${army.player}`;
+          armyImg.alt = `Jugador ${army.player + 1}`;
           
+          // First image is at center (0,0), rest stack down-left
           const offsetXStack = -imageIndex * 4 * scale;
           const offsetYStack = imageIndex * 4 * scale;
           
           armyImg.style.left = offsetXStack + 'px';
           armyImg.style.top = offsetYStack + 'px';
-          armyImg.style.width = (30 * scale) + 'px';
-          armyImg.style.height = (30 * scale) + 'px';
+          armyImg.style.width = stackSize + 'px';
+          armyImg.style.height = stackSize + 'px';
           armyImg.style.zIndex = 1000 - imageIndex;
           
           stack.appendChild(armyImg);
@@ -413,11 +524,10 @@
       // Add total count label
       const countLabel = document.createElement('div');
       countLabel.className = 'army-count';
-      countLabel.style.width = (30 * scale) + 'px';
-      countLabel.style.height = (30 * scale) + 'px';
+      countLabel.style.width = stackSize + 'px';
+      countLabel.style.height = stackSize + 'px';
       countLabel.style.fontSize = (14 * scale) + 'px';
       
-      // Determine color based on team
       const teamColor = getTeamTextColor(sortedArmies[0].player);
       countLabel.style.color = teamColor;
       countLabel.textContent = totalArmies;
@@ -511,18 +621,18 @@
               explosionImg.src = 'explosion.png';
               explosionImg.style.width = '100%';
               explosionImg.style.height = '100%';
-              explosionImg.style.opacity = '0.5';
+              explosionImg.style.opacity = '0.75';
               explosionImg.style.objectFit = 'contain';
               
               explosionContainer.appendChild(explosionImg);
               explosionOverlay.appendChild(explosionContainer);
 
               // Blue team stack (left)
-              const blueStack = createArmyStack(blueArmies, 0.5, cx - 15, cy);
+              const blueStack = createArmyStack(blueArmies, 0.5, cx - r * 0.5, cy);
               armyOverlay.appendChild(blueStack);
 
               // Red team stack (right)
-              const redStack = createArmyStack(redArmies, 0.5, cx + 15, cy);
+              const redStack = createArmyStack(redArmies, 0.5, cx + r * 0.5, cy);
               armyOverlay.appendChild(redStack);
             } else {
               // Single team, normal display
