@@ -323,7 +323,6 @@
         if (hex) {
           map[hex] = team;
           armyData[hex] = [];
-          // Columns 2-7 are armies for Jugador 1-6 (players 0-5)
           for (let i = 0; i < 6; i++) {
             const count = row.c[i + 2] ? parseInt(row.c[i + 2].v || 0) : 0;
             if (count > 0) {
@@ -363,14 +362,12 @@
       const armies = armyMap[hexKey];
       
       if (armies && armies.length > 0) {
-        // Group armies by team
         const blueArmies = armies.filter(a => a.player < 3).sort((a, b) => a.player - b.player);
         const redArmies = armies.filter(a => a.player >= 3).sort((a, b) => a.player - b.player);
         
         const blueTotal = blueArmies.reduce((sum, a) => sum + a.count, 0);
         const redTotal = redArmies.reduce((sum, a) => sum + a.count, 0);
 
-        // Blue team section
         if (blueArmies.length > 0) {
           const blueSection = document.createElement('div');
           blueSection.className = 'team-section blue';
@@ -392,7 +389,6 @@
           armyDetails.appendChild(blueSection);
         }
 
-        // Red team section
         if (redArmies.length > 0) {
           const redSection = document.createElement('div');
           redSection.className = 'team-section red';
@@ -414,7 +410,6 @@
           armyDetails.appendChild(redSection);
         }
 
-        // Total section
         const totalDiv = document.createElement('div');
         totalDiv.className = 'total-info';
         
@@ -463,7 +458,8 @@
     }
 
     function createArmyStack(armies, scale = 1, centerX = 0, centerY = 0) {
-      const sortedArmies = [...armies].sort((a, b) => b.count - a.count);
+      // Sort by count ASCENDING so smallest is first (drawn first, behind)
+      const sortedArmies = [...armies].sort((a, b) => a.count - b.count);
       const totalArmies = sortedArmies.reduce((sum, a) => sum + a.count, 0);
 
       const stackSize = 30 * scale;
@@ -482,28 +478,29 @@
           armyImg.src = `Equip${army.player}.jpg`;
           armyImg.alt = `Jugador ${army.player + 1}`;
           
-          // Stack goes UP and to the RIGHT from center
-          const offsetX = imageIndex * 4 * scale;
-          const offsetY = -imageIndex * 4 * scale;
+          // Stack: each image is placed down-left so next one partially covers it
+          const offsetX = -imageIndex * 4 * scale;
+          const offsetY = imageIndex * 4 * scale;
           
           armyImg.style.left = offsetX + 'px';
           armyImg.style.top = offsetY + 'px';
           armyImg.style.width = stackSize + 'px';
           armyImg.style.height = stackSize + 'px';
-          armyImg.style.zIndex = 1000 - imageIndex;
+          armyImg.style.zIndex = imageIndex; // Increasing z-index so last (largest) is on top
           
           stack.appendChild(armyImg);
           imageIndex++;
         }
       }
 
-      // Add total count label
+      // Add total count label on top of the largest army
       const countLabel = document.createElement('div');
       countLabel.className = 'army-count';
       countLabel.style.width = stackSize + 'px';
       countLabel.style.height = stackSize + 'px';
       countLabel.style.fontSize = (14 * scale) + 'px';
-      countLabel.style.color = getTeamTextColor(sortedArmies[0].player);
+      countLabel.style.color = getTeamTextColor(sortedArmies[sortedArmies.length - 1].player);
+      countLabel.style.zIndex = imageIndex + 1; // Above all armies
       countLabel.textContent = totalArmies;
       
       stack.appendChild(countLabel);
@@ -545,7 +542,6 @@
           if (team === 'blau') blueCount++;
           else if (team === 'vermell') redCount++;
 
-          // Fill (clickable area)
           const fill = document.createElementNS('http://www.w3.org/2000/svg', 'polygon');
           fill.setAttribute('points', pts);
           fill.setAttribute('fill', team === 'blau' ? 'rgba(60,120,220,0.22)' : 'rgba(210,50,50,0.22)');
@@ -561,7 +557,6 @@
           
           svgOwn.appendChild(fill);
 
-          // Border
           const poly = document.createElementNS('http://www.w3.org/2000/svg', 'polygon');
           poly.setAttribute('points', pts);
           poly.setAttribute('fill', 'none');
@@ -570,17 +565,14 @@
           poly.setAttribute('pointer-events', 'none');
           svgHex.appendChild(poly);
 
-          // Armies
           const hexKey = `${col}_${row}`;
           const armies = armyMap[hexKey];
           if (armies && armies.length > 0) {
-            // Check if there are armies from both teams
             const blueArmies = armies.filter(a => a.player < 3);
             const redArmies = armies.filter(a => a.player >= 3);
             const hasConflict = blueArmies.length > 0 && redArmies.length > 0;
 
             if (hasConflict) {
-              // Add explosion image
               const explosionContainer = document.createElement('div');
               explosionContainer.style.position = 'absolute';
               explosionContainer.style.left = (cx - r * 0.7) + 'px';
@@ -599,15 +591,12 @@
               explosionContainer.appendChild(explosionImg);
               explosionOverlay.appendChild(explosionContainer);
 
-              // Blue team stack (left)
               const blueStack = createArmyStack(blueArmies, 0.5, cx - r * 0.5, cy);
               armyOverlay.appendChild(blueStack);
 
-              // Red team stack (right)
               const redStack = createArmyStack(redArmies, 0.5, cx + r * 0.5, cy);
               armyOverlay.appendChild(redStack);
             } else {
-              // Single team, normal display
               const stack = createArmyStack(armies, 1, cx, cy);
               armyOverlay.appendChild(stack);
             }
