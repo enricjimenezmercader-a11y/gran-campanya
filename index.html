@@ -126,8 +126,6 @@
       text-shadow: 1px 1px 3px rgba(0,0,0,0.9), -1px -1px 3px rgba(0,0,0,0.9);
       z-index: 2000;
       pointer-events: none;
-      left: 0;
-      top: 0;
     }
 
     .army-stack.conflict .army-count {
@@ -493,7 +491,7 @@
         }
       }
 
-      // Add total count label on top of the largest army (last one)
+      // Add total count label centered on the rightmost (last) army
       const countLabel = document.createElement('div');
       countLabel.className = 'army-count';
       countLabel.style.width = stackSize + 'px';
@@ -501,6 +499,9 @@
       countLabel.style.fontSize = (14 * scale) + 'px';
       countLabel.style.color = getTeamTextColor(sortedArmies[sortedArmies.length - 1].player);
       countLabel.style.zIndex = imageIndex + 1; // Above all armies
+      // Position at the rightmost army location
+      countLabel.style.left = ((imageIndex - 1) * 4 * scale) + 'px';
+      countLabel.style.top = (-(imageIndex - 1) * 4 * scale) + 'px';
       countLabel.textContent = totalArmies;
       
       stack.appendChild(countLabel);
