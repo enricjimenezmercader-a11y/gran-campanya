@@ -78,7 +78,7 @@
       height: auto;
     }
 
-    #ownership-overlay, #hex-overlay, #army-overlay, #explosion-overlay {
+    #ownership-overlay, #hex-overlay, #army-overlay, #explosion-overlay, #arrow-overlay {
       position: absolute;
       top: 0; left: 0;
       width: 100%; height: 100%;
@@ -132,6 +132,23 @@
       width: 18.75px;
       height: 18.75px;
       font-size: 10px;
+    }
+
+    .movement-arrow {
+      position: absolute;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: bold;
+      font-size: 14px;
+      z-index: 500;
+      pointer-events: none;
+    }
+
+    .movement-arrow::before {
+      content: '→';
+      font-size: 24px;
+      margin-right: 4px;
     }
 
     .side-panel {
@@ -233,6 +250,13 @@
       color: #1a1208;
     }
 
+    .move-btn:disabled {
+      background: #5a5a5a;
+      color: #8a8a8a;
+      cursor: not-allowed;
+      border-color: #8a8a8a;
+    }
+
     .move-form {
       margin: 1rem 0;
       padding: 1rem;
@@ -330,6 +354,26 @@
       margin: 0.3rem 0;
     }
 
+    .end-turn-btn {
+      background: #7a5c1e;
+      border: 2px solid #c9a84c;
+      color: #c9a84c;
+      padding: 0.7rem 1.5rem;
+      border-radius: 4px;
+      cursor: pointer;
+      font-family: 'Times New Roman', serif;
+      font-size: 1rem;
+      margin-top: 1.5rem;
+      transition: all 0.2s;
+      width: 100%;
+      font-weight: bold;
+    }
+
+    .end-turn-btn:hover {
+      background: #c9a84c;
+      color: #1a1208;
+    }
+
     .close-btn {
       background: #7a5c1e;
       border: 2px solid #c9a84c;
@@ -338,7 +382,7 @@
       border-radius: 4px;
       cursor: pointer;
       font-family: 'Times New Roman', serif;
-      margin-top: 1.5rem;
+      margin-top: 1rem;
       transition: all 0.2s;
       width: 100%;
     }
@@ -382,6 +426,12 @@
       color: #ff6464;
       border: 1px solid #ff6464;
     }
+
+    .status-info {
+      background: rgba(100, 150, 200, 0.3);
+      color: #90c0ff;
+      border: 1px solid #90c0ff;
+    }
   </style>
 </head>
 <body>
@@ -398,6 +448,7 @@
         <svg id="ownership-overlay"></svg>
         <svg id="hex-overlay"></svg>
         <div id="explosion-overlay"></div>
+        <div id="arrow-overlay"></div>
         <div id="army-overlay"></div>
       </div>
     </div>
@@ -406,6 +457,7 @@
   <div id="sidePanel" class="side-panel">
     <h2 id="hexName">Hexagon</h2>
     <div id="armyDetails"></div>
+    <button class="end-turn-btn" onclick="endTurn()">End Turn</button>
     <button class="close-btn" onclick="closeSidePanel()">Close</button>
   </div>
 
@@ -414,6 +466,7 @@
     const svgOwn = document.getElementById('ownership-overlay');
     const svgHex = document.getElementById('hex-overlay');
     const explosionOverlay = document.getElementById('explosion-overlay');
+    const arrowOverlay = document.getElementById('arrow-overlay');
     const armyOverlay = document.getElementById('army-overlay');
     const sidePanel = document.getElementById('sidePanel');
     const backdrop = document.getElementById('backdrop');
@@ -438,6 +491,8 @@
     let teamMap = {};
     let armyMap = {};
     let currentHex = null;
+    let pendingMovements = []; // Store pending movements until end turn
+    let movedArmies = new Set(); // Track which armies have moved this turn
 
     function getTeamTextColor(player) {
       return player < 3 ? '#5a96ff' : '#ff4a4a';
@@ -475,14 +530,9 @@
     }
 
     function isValidHex(col, row) {
-      // Check bounds
       if (col < 0 || col >= COLS || row < 0 || row >= ROWS) return false;
-      
-      // Check if it's water/sea
       const k = `${col}_${row}`;
       if (waterHexes.has(k)) return false;
-      
-      // Check if it's in the map (has a team)
       return teamOf(col, row) !== null;
     }
 
@@ -490,7 +540,6 @@
       const adjacent = [];
       
       if (col % 2 === 0) {
-        // Even column
         const neighbors = [
           [col - 1, row - 1],
           [col - 1, row],
@@ -506,7 +555,6 @@
           }
         }
       } else {
-        // Odd column
         const neighbors = [
           [col - 1, row],
           [col - 1, row + 1],
@@ -577,10 +625,15 @@
     }
 
     function showMoveForm(player, currentCount, fromHex) {
+      const moveKey = `${fromHex}_${player}`;
+      if (movedArmies.has(moveKey)) {
+        alert(`Jugador ${player + 1} ja ha mogut les seves tropes d'aquest hexagon aquest torn.`);
+        return;
+      }
+
       const moveFormId = `move-form-${player}`;
       const existingForm = document.getElementById(moveFormId);
       
-      // Remove other active forms
       document.querySelectorAll('.move-form.active').forEach(form => {
         if (form.id !== moveFormId) form.classList.remove('active');
       });
@@ -606,7 +659,7 @@
           <input type="number" id="qty-${player}" min="1" max="${currentCount}" value="1" placeholder="Quantitat">
           <div id="status-${player}"></div>
           <div class="move-form-buttons">
-            <button class="submit-move" onclick="submitMove('${fromHex}', ${player}, ${currentCount})">Moure</button>
+            <button class="submit-move" onclick="orderMovement('${fromHex}', ${player}, ${currentCount})">Ordenar</button>
             <button class="cancel-move" onclick="cancelMove(${player})">Cancel·lar</button>
           </div>
         `;
@@ -616,7 +669,7 @@
       }
     }
 
-    window.submitMove = async function(fromHex, player, currentCount) {
+    window.orderMovement = function(fromHex, player, currentCount) {
       const destHexSelect = document.getElementById(`dest-hex-${player}`);
       const qtyInput = document.getElementById(`qty-${player}`);
       const statusDiv = document.getElementById(`status-${player}`);
@@ -629,19 +682,24 @@
         return;
       }
 
-      try {
-        await addMovementToSheet(fromHex, toHex, player, quantity);
-        updateLocalArmies(fromHex, toHex, player, quantity);
-        
-        statusDiv.innerHTML = '<div class="status-message status-success">Moviment registrat!</div>';
-        setTimeout(() => {
-          cancelMove(player);
-          showHexPanel(...currentHex.split('_').map(Number));
-          drawAll();
-        }, 1000);
-      } catch (e) {
-        statusDiv.innerHTML = '<div class="status-message status-error">Error al registrar moviment</div>';
-      }
+      // Add to pending movements
+      pendingMovements.push({
+        fromHex: fromHex,
+        toHex: toHex,
+        player: player,
+        quantity: quantity
+      });
+
+      // Mark this army as moved
+      movedArmies.add(`${fromHex}_${player}`);
+
+      statusDiv.innerHTML = '<div class="status-message status-success">Moviment ordenat!</div>';
+      
+      setTimeout(() => {
+        cancelMove(player);
+        showHexPanel(...currentHex.split('_').map(Number));
+        drawAll();
+      }, 800);
     };
 
     window.cancelMove = function(player) {
@@ -649,6 +707,33 @@
       if (moveForm) {
         moveForm.classList.remove('active');
       }
+    };
+
+    window.endTurn = async function() {
+      if (pendingMovements.length === 0) {
+        alert('No hi ha moviments ordenats.');
+        return;
+      }
+
+      console.log('Executing movements:', pendingMovements);
+
+      // Execute all movements
+      for (const movement of pendingMovements) {
+        await addMovementToSheet(movement.fromHex, movement.toHex, movement.player, movement.quantity);
+        updateLocalArmies(movement.fromHex, movement.toHex, movement.player, movement.quantity);
+      }
+
+      // Clear pending movements and moved armies for next turn
+      pendingMovements = [];
+      movedArmies.clear();
+
+      // Refresh display
+      if (currentHex) {
+        showHexPanel(...currentHex.split('_').map(Number));
+      }
+      drawAll();
+
+      alert('Torn completat!');
     };
 
     function showHexPanel(col, row) {
@@ -679,12 +764,15 @@
           blueSection.appendChild(blueTitle);
           
           for (const army of blueArmies) {
+            const moveKey = `${hexKey}_${army.player}`;
+            const alreadyMoved = movedArmies.has(moveKey);
+            
             const div = document.createElement('div');
             div.className = 'army-info';
             div.innerHTML = `
               <span class="army-info-label">Jugador ${army.player + 1}</span>
               <span class="army-info-value">${army.count}</span>
-              <button class="move-btn" onclick="showMoveForm(${army.player}, ${army.count}, '${hexKey}')">Moure</button>
+              <button class="move-btn" ${alreadyMoved ? 'disabled' : ''} onclick="showMoveForm(${army.player}, ${army.count}, '${hexKey}')">${alreadyMoved ? '✓ Mogut' : 'Moure'}</button>
             `;
             blueSection.appendChild(div);
           }
@@ -701,12 +789,15 @@
           redSection.appendChild(redTitle);
           
           for (const army of redArmies) {
+            const moveKey = `${hexKey}_${army.player}`;
+            const alreadyMoved = movedArmies.has(moveKey);
+            
             const div = document.createElement('div');
             div.className = 'army-info';
             div.innerHTML = `
               <span class="army-info-label">Jugador ${army.player + 1}</span>
               <span class="army-info-value">${army.count}</span>
-              <button class="move-btn" onclick="showMoveForm(${army.player}, ${army.count}, '${hexKey}')">Moure</button>
+              <button class="move-btn" ${alreadyMoved ? 'disabled' : ''} onclick="showMoveForm(${army.player}, ${army.count}, '${hexKey}')">${alreadyMoved ? '✓ Mogut' : 'Moure'}</button>
             `;
             redSection.appendChild(div);
           }
@@ -777,6 +868,12 @@
 
       let imageIndex = 0;
       for (const army of sortedArmies) {
+        // Calculate how many armies of this player are moving
+        const movedCount = pendingMovements
+          .filter(m => m.fromHex.split('_').slice(0, 2).join('_') === 
+                      stack.style.left && m.player === army.player)
+          .reduce((sum, m) => sum + m.quantity, 0);
+        
         for (let i = 0; i < army.count; i++) {
           const armyImg = document.createElement('img');
           armyImg.className = 'army-image';
@@ -825,6 +922,7 @@
       });
 
       explosionOverlay.innerHTML = '';
+      arrowOverlay.innerHTML = '';
       armyOverlay.innerHTML = '';
 
       const rW = W / (2 + 1.5 * (COLS - 1));
@@ -835,6 +933,9 @@
 
       let blueCount = 0, redCount = 0;
 
+      // Store hex positions for arrow drawing
+      const hexPositions = {};
+
       for (let col = 0; col < COLS; col++) {
         const cx = r + col * 1.5 * r;
         for (let row = 0; row < ROWS; row++) {
@@ -842,6 +943,7 @@
           if (!team) continue;
           
           const cy = vr + row * hexH + (col % 2 === 1 ? vr : 0);
+          hexPositions[`${col}_${row}`] = { cx, cy };
           const pts = flatHexCorners(cx, cy, r - 1);
 
           if (team === 'blau') blueCount++;
@@ -906,6 +1008,23 @@
               armyOverlay.appendChild(stack);
             }
           }
+        }
+      }
+
+      // Draw movement arrows
+      for (const movement of pendingMovements) {
+        const fromPos = hexPositions[movement.fromHex];
+        const toPos = hexPositions[movement.toHex];
+        
+        if (fromPos && toPos) {
+          const arrowDiv = document.createElement('div');
+          arrowDiv.className = 'movement-arrow';
+          arrowDiv.style.color = getTeamTextColor(movement.player);
+          arrowDiv.style.left = ((fromPos.cx + toPos.cx) / 2) + 'px';
+          arrowDiv.style.top = ((fromPos.cy + toPos.cy) / 2) + 'px';
+          arrowDiv.style.transform = 'translate(-50%, -50%)';
+          arrowDiv.textContent = movement.quantity;
+          arrowOverlay.appendChild(arrowDiv);
         }
       }
 
