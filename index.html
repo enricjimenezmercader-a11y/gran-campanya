@@ -145,7 +145,7 @@
       box-shadow: -10px 0 30px rgba(0,0,0,0.8), inset -10px 0 20px rgba(0,0,0,0.5);
       padding: 2rem;
       color: #c9a84c;
-      font-family: 'UnifrakturMaguntia', cursive;
+      font-family: 'Times New Roman', serif;
       transform: translateX(100%);
       transition: transform 0.3s ease-out;
       overflow-y: auto;
@@ -162,6 +162,7 @@
       text-shadow: 0 0 12px rgba(201,168,76,0.7), 2px 2px 4px #000;
       border-bottom: 2px solid #7a5c1e;
       padding-bottom: 1rem;
+      font-family: 'UnifrakturMaguntia', cursive;
     }
 
     .team-section {
@@ -221,7 +222,7 @@
       padding: 0.3rem 0.6rem;
       border-radius: 3px;
       cursor: pointer;
-      font-family: 'UnifrakturMaguntia', cursive;
+      font-family: 'Times New Roman', serif;
       font-size: 0.8rem;
       transition: all 0.2s;
       margin-left: 0.5rem;
@@ -252,7 +253,7 @@
       opacity: 0.9;
     }
 
-    .move-form input {
+    .move-form input, .move-form select {
       width: 100%;
       padding: 0.5rem;
       margin-bottom: 0.8rem;
@@ -260,16 +261,25 @@
       border: 1px solid #c9a84c;
       color: #c9a84c;
       border-radius: 3px;
-      font-family: 'UnifrakturMaguntia', cursive;
+      font-family: 'Times New Roman', serif;
     }
 
     .move-form input::placeholder {
       color: rgba(201,168,76,0.6);
     }
 
-    .move-form input:focus {
+    .move-form input:focus, .move-form select:focus {
       outline: none;
       box-shadow: 0 0 10px rgba(201,168,76,0.5);
+    }
+
+    .move-form select {
+      cursor: pointer;
+    }
+
+    .move-form select option {
+      background: #1a1208;
+      color: #c9a84c;
     }
 
     .move-form-buttons {
@@ -282,7 +292,7 @@
       padding: 0.5rem;
       border: 1px solid #c9a84c;
       border-radius: 3px;
-      font-family: 'UnifrakturMaguntia', cursive;
+      font-family: 'Times New Roman', serif;
       cursor: pointer;
       transition: all 0.2s;
     }
@@ -327,7 +337,7 @@
       padding: 0.5rem 1rem;
       border-radius: 4px;
       cursor: pointer;
-      font-family: 'UnifrakturMaguntia', cursive;
+      font-family: 'Times New Roman', serif;
       margin-top: 1.5rem;
       transition: all 0.2s;
       width: 100%;
@@ -464,6 +474,58 @@
       return teamMap[k] || null;
     }
 
+    function isValidHex(col, row) {
+      // Check bounds
+      if (col < 0 || col >= COLS || row < 0 || row >= ROWS) return false;
+      
+      // Check if it's water/sea
+      const k = `${col}_${row}`;
+      if (waterHexes.has(k)) return false;
+      
+      // Check if it's in the map (has a team)
+      return teamOf(col, row) !== null;
+    }
+
+    function getAdjacentHexes(col, row) {
+      const adjacent = [];
+      
+      if (col % 2 === 0) {
+        // Even column
+        const neighbors = [
+          [col - 1, row - 1],
+          [col - 1, row],
+          [col, row - 1],
+          [col, row + 1],
+          [col + 1, row - 1],
+          [col + 1, row]
+        ];
+        
+        for (const [c, r] of neighbors) {
+          if (isValidHex(c, r)) {
+            adjacent.push(`${c}_${r}`);
+          }
+        }
+      } else {
+        // Odd column
+        const neighbors = [
+          [col - 1, row],
+          [col - 1, row + 1],
+          [col, row - 1],
+          [col, row + 1],
+          [col + 1, row],
+          [col + 1, row + 1]
+        ];
+        
+        for (const [c, r] of neighbors) {
+          if (isValidHex(c, r)) {
+            adjacent.push(`${c}_${r}`);
+          }
+        }
+      }
+      
+      return adjacent.sort();
+    }
+
     function flatHexCorners(cx, cy, rv) {
       const pts = [];
       for (let i = 0; i < 6; i++) {
@@ -489,12 +551,11 @@
         return true;
       } catch (e) {
         console.warn('Form submission:', e);
-        return true; // Allow local update anyway
+        return true;
       }
     }
 
     function updateLocalArmies(fromHex, toHex, player, quantity) {
-      // Remove from source
       const fromArmies = armyMap[fromHex];
       const armyIndex = fromArmies.findIndex(a => a.player === player);
       if (armyIndex !== -1) {
@@ -504,7 +565,6 @@
         }
       }
 
-      // Add to destination
       if (!armyMap[toHex]) {
         armyMap[toHex] = [];
       }
@@ -525,13 +585,24 @@
         if (form.id !== moveFormId) form.classList.remove('active');
       });
 
+      const [fromCol, fromRow] = fromHex.split('_').map(Number);
+      const adjacentHexes = getAdjacentHexes(fromCol, fromRow);
+
       if (!existingForm) {
         const moveForm = document.createElement('div');
         moveForm.id = moveFormId;
         moveForm.className = 'move-form active';
+        
+        let selectOptions = '<option value="">Selecciona hexagon...</option>';
+        for (const hex of adjacentHexes) {
+          selectOptions += `<option value="${hex}">${hex}</option>`;
+        }
+        
         moveForm.innerHTML = `
           <label>Jugador ${player + 1} - Moure ${currentCount} exèrcits</label>
-          <input type="text" id="dest-hex-${player}" placeholder="Hexagon de destinació (ex: 5_3)" maxlength="3">
+          <select id="dest-hex-${player}">
+            ${selectOptions}
+          </select>
           <input type="number" id="qty-${player}" min="1" max="${currentCount}" value="1" placeholder="Quantitat">
           <div id="status-${player}"></div>
           <div class="move-form-buttons">
@@ -546,21 +617,15 @@
     }
 
     window.submitMove = async function(fromHex, player, currentCount) {
-      const destHexInput = document.getElementById(`dest-hex-${player}`);
+      const destHexSelect = document.getElementById(`dest-hex-${player}`);
       const qtyInput = document.getElementById(`qty-${player}`);
       const statusDiv = document.getElementById(`status-${player}`);
 
-      const toHex = destHexInput.value.trim();
+      const toHex = destHexSelect.value;
       const quantity = parseInt(qtyInput.value);
 
       if (!toHex || isNaN(quantity) || quantity <= 0 || quantity > currentCount) {
         statusDiv.innerHTML = '<div class="status-message status-error">Entrada invàlida</div>';
-        return;
-      }
-
-      // Validate destination hex exists
-      if (!armyMap[toHex]) {
-        statusDiv.innerHTML = '<div class="status-message status-error">Hexagon de destinació invàlid</div>';
         return;
       }
 
