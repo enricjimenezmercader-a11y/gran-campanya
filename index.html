@@ -175,22 +175,6 @@
       height: 18.75px;
     }
 
-    .army-count {
-      position: absolute;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 17.5px;
-      font-weight: bold;
-      text-shadow: 1px 1px 3px rgba(0,0,0,0.9), -1px -1px 3px rgba(0,0,0,0.9);
-      z-index: 2000;
-      pointer-events: none;
-    }
-
-    .army-stack.conflict .army-count {
-      font-size: 10px;
-    }
-
     .destination-highlight {
       fill: rgba(200, 220, 100, 0.5);
       stroke: #ffff00;
@@ -823,10 +807,13 @@
       destinationSvg.innerHTML = '';
       hexLabelOverlay.innerHTML = '';
 
+      // Refresh stack immediately
+      drawAll();
+      
+      // Update side panel
       setTimeout(() => {
         cancelMove(player, fromHex);
         showHexPanel(...currentHex.split('_').map(Number));
-        drawAll();
       }, 800);
     };
 
@@ -915,12 +902,17 @@
           blueSection.appendChild(blueTitle);
           
           for (const army of blueArmies) {
+            // Calculate available armies (total - moved)
+            const moveKey = `${hexKey}_${army.player}`;
+            const movedQty = movedQuantities[moveKey] || 0;
+            const availableCount = army.count - movedQty;
+            
             const div = document.createElement('div');
             div.className = 'army-info';
             div.innerHTML = `
               <span class="army-info-label">Jugador ${army.player + 1}</span>
-              <span class="army-info-value">${army.count}</span>
-              <button class="move-btn" onclick="showMoveForm(${army.player}, ${army.count}, '${hexKey}')">Moure</button>
+              <span class="army-info-value">${availableCount}</span>
+              <button class="move-btn" ${availableCount <= 0 ? 'disabled' : ''} onclick="showMoveForm(${army.player}, ${availableCount}, '${hexKey}')">Moure</button>
             `;
             blueSection.appendChild(div);
           }
@@ -937,12 +929,17 @@
           redSection.appendChild(redTitle);
           
           for (const army of redArmies) {
+            // Calculate available armies (total - moved)
+            const moveKey = `${hexKey}_${army.player}`;
+            const movedQty = movedQuantities[moveKey] || 0;
+            const availableCount = army.count - movedQty;
+            
             const div = document.createElement('div');
             div.className = 'army-info';
             div.innerHTML = `
               <span class="army-info-label">Jugador ${army.player + 1}</span>
-              <span class="army-info-value">${army.count}</span>
-              <button class="move-btn" onclick="showMoveForm(${army.player}, ${army.count}, '${hexKey}')">Moure</button>
+              <span class="army-info-value">${availableCount}</span>
+              <button class="move-btn" ${availableCount <= 0 ? 'disabled' : ''} onclick="showMoveForm(${army.player}, ${availableCount}, '${hexKey}')">Moure</button>
             `;
             redSection.appendChild(div);
           }
@@ -1055,19 +1052,6 @@
           imageIndex++;
         }
       }
-
-      const countLabel = document.createElement('div');
-      countLabel.className = 'army-count';
-      countLabel.style.width = stackSize + 'px';
-      countLabel.style.height = stackSize + 'px';
-      countLabel.style.fontSize = (17.5 * scale) + 'px';
-      countLabel.style.color = getTeamTextColor(sortedArmies[sortedArmies.length - 1].player);
-      countLabel.style.zIndex = imageIndex + 1;
-      countLabel.textContent = totalArmies;
-      countLabel.style.left = 0;
-      countLabel.style.top = 0;
-      
-      stack.appendChild(countLabel);
       
       return stack;
     }
@@ -1173,7 +1157,7 @@
         }
       }
 
-      // Draw movement arrows
+      // Draw movement arrows with right-angle triangle pointing to destination
       for (const movement of pendingMovements) {
         const fromPos = hexPositions[movement.fromHex];
         const toPos = hexPositions[movement.toHex];
@@ -1181,20 +1165,18 @@
         if (fromPos && toPos) {
           const angle = getDirectionToHex(movement.fromHex, movement.toHex);
           
-          // Position arrow in the middle of the hex, pointing toward destination
-          const midX = (fromPos.cx + toPos.cx) / 2;
-          const midY = (fromPos.cy + toPos.cy) / 2;
-          
+          // Position arrow in the source hex center
           const arrowContainer = document.createElement('div');
           arrowContainer.className = 'movement-arrow-container';
-          arrowContainer.style.left = midX + 'px';
-          arrowContainer.style.top = midY + 'px';
+          arrowContainer.style.left = fromPos.cx + 'px';
+          arrowContainer.style.top = fromPos.cy + 'px';
           
           // Arrow size: triangle base is 75% of hexagon edge length
           const arrowSize = fromPos.r * 2 * 0.75;
           arrowContainer.style.width = arrowSize + 'px';
           arrowContainer.style.height = arrowSize + 'px';
           
+          // Rotate so the right angle points toward destination
           arrowContainer.style.transform = `translate(-50%, -50%) rotate(${angle}deg)`;
           
           const arrowImg = document.createElement('img');
