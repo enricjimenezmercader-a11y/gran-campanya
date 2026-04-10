@@ -414,8 +414,16 @@
     const waterHexes = new Set(['2_1','3_1','4_0','4_1','5_0','6_0']);
     const SHEET_ID = '12QzDZCtJlhVK7gNPfhPH43MoncUNnSfSvcws1P7z0yo';
     const SHEET_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json`;
-    const MOVEMENTS_SHEET_ID = '12QzDZCtJlhVK7gNPfhPH43MoncUNnSfSvcws1P7z0yo'; // Same sheet, different tab
-    const MOVEMENTS_SHEET_NAME = 'Movements';
+    
+    // Google Form Configuration
+    const FORM_ID = '1FAIpQLSfQgS3eGiloGT2idP83Rucm3IlSKU6bCPucjhKB0l-805NgHQ';
+    const FORM_URL = `https://docs.google.com/forms/d/e/${FORM_ID}/formResponse`;
+    const ENTRY_IDS = {
+      fromHex: '953844485',
+      toHex: '178946486',
+      player: '1327624232',
+      quantity: '852671544'
+    };
 
     let teamMap = {};
     let armyMap = {};
@@ -467,23 +475,20 @@
 
     async function addMovementToSheet(fromHex, toHex, player, quantity) {
       try {
-        const response = await fetch('https://docs.google.com/forms/u/0/d/e/1FAIpQLSeJxzxKzxKzxKzxKzxKzxKzxKzxKzxKzxKzxKzxKzxK/formResponse', {
+        const formData = new FormData();
+        formData.append(`entry.${ENTRY_IDS.fromHex}`, fromHex);
+        formData.append(`entry.${ENTRY_IDS.toHex}`, toHex);
+        formData.append(`entry.${ENTRY_IDS.player}`, player + 1);
+        formData.append(`entry.${ENTRY_IDS.quantity}`, quantity);
+
+        const response = await fetch(FORM_URL, {
           method: 'POST',
           mode: 'no-cors',
-          headers: {
-            'Content-Type': 'application/x-www-form-urlencoded'
-          },
-          body: new URLSearchParams({
-            'entry.1234567890': fromHex,
-            'entry.1234567891': toHex,
-            'entry.1234567892': player + 1,
-            'entry.1234567893': quantity,
-            'entry.1234567894': new Date().toISOString()
-          })
+          body: formData
         });
         return true;
       } catch (e) {
-        console.warn('Could not submit to sheet (expected in no-cors mode):', e);
+        console.warn('Form submission:', e);
         return true; // Allow local update anyway
       }
     }
