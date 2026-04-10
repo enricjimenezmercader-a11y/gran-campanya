@@ -218,8 +218,6 @@
       text-shadow: 1px 1px 2px #fff;
       z-index: 701;
       pointer-events: none;
-      writing-mode: vertical-rl;
-      text-orientation: mixed;
     }
 
     .side-panel {
@@ -1199,7 +1197,8 @@
 
       // Draw movement arrows inside origin hexagons
       for (const movement of pendingMovements) {
-        const arrowSize = hexRadius * 2 * 0.75;
+        // Arrow is 75% the size
+        const arrowSize = (hexRadius * 2 * 0.75) * 0.75;
         const arrowPos = getArrowPosition(movement.fromHex, movement.toHex, arrowSize);
         const arrowRotation = getArrowRotation(movement.fromHex, movement.toHex);
         
@@ -1212,6 +1211,7 @@
           arrowContainer.style.width = arrowSize + 'px';
           arrowContainer.style.height = arrowSize + 'px';
           
+          // Rotate the container but NOT the number
           arrowContainer.style.transform = `translate(-50%, -50%) rotate(${arrowRotation}deg)`;
           
           const arrowImg = document.createElement('img');
@@ -1225,7 +1225,8 @@
           countDiv.className = 'movement-count';
           countDiv.style.left = '50%';
           countDiv.style.top = '50%';
-          countDiv.style.transform = 'translate(-50%, -50%)';
+          // Counter-rotate the number to keep it upright
+          countDiv.style.transform = `translate(-50%, -50%) rotate(-${arrowRotation}deg)`;
           countDiv.textContent = movement.quantity;
           arrowContainer.appendChild(countDiv);
           
