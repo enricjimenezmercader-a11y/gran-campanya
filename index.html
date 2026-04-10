@@ -683,6 +683,32 @@
       return angle;
     }
 
+    // Get the edge point between two hexes where the arrow should be positioned
+    function getEdgePointBetweenHexes(fromHex, toHex) {
+      const fromPos = hexPositions[fromHex];
+      const toPos = hexPositions[toHex];
+      
+      if (!fromPos || !toPos) return null;
+      
+      // Calculate midpoint
+      const midX = (fromPos.cx + toPos.cx) / 2;
+      const midY = (fromPos.cy + toPos.cy) / 2;
+      
+      // Calculate distance from source to destination
+      const dx = toPos.cx - fromPos.cx;
+      const dy = toPos.cy - fromPos.cy;
+      const distance = Math.sqrt(dx * dx + dy * dy);
+      
+      // Normalize and scale to source hex edge (approximately 80% toward destination)
+      const ratio = 0.80; // Position at 80% from source toward destination
+      const edgeX = fromPos.cx + (dx * ratio);
+      const edgeY = fromPos.cy + (dy * ratio);
+      
+      const angle = Math.atan2(dy, dx) * 180 / Math.PI;
+      
+      return { x: edgeX, y: edgeY, angle: angle };
+    }
+
     async function addMovementToSheet(fromHex, toHex, player, quantity) {
       try {
         const formData = new FormData();
@@ -1157,27 +1183,24 @@
         }
       }
 
-      // Draw movement arrows with right-angle triangle pointing to destination
+      // Draw movement arrows positioned on the edge between hexagons
       for (const movement of pendingMovements) {
-        const fromPos = hexPositions[movement.fromHex];
-        const toPos = hexPositions[movement.toHex];
+        const edgeInfo = getEdgePointBetweenHexes(movement.fromHex, movement.toHex);
         
-        if (fromPos && toPos) {
-          const angle = getDirectionToHex(movement.fromHex, movement.toHex);
-          
-          // Position arrow in the source hex center
+        if (edgeInfo) {
           const arrowContainer = document.createElement('div');
           arrowContainer.className = 'movement-arrow-container';
-          arrowContainer.style.left = fromPos.cx + 'px';
-          arrowContainer.style.top = fromPos.cy + 'px';
+          arrowContainer.style.left = edgeInfo.x + 'px';
+          arrowContainer.style.top = edgeInfo.y + 'px';
           
           // Arrow size: triangle base is 75% of hexagon edge length
+          const fromPos = hexPositions[movement.fromHex];
           const arrowSize = fromPos.r * 2 * 0.75;
           arrowContainer.style.width = arrowSize + 'px';
           arrowContainer.style.height = arrowSize + 'px';
           
-          // Rotate so the right angle points toward destination
-          arrowContainer.style.transform = `translate(-50%, -50%) rotate(${angle}deg)`;
+          // Rotate so the right angle (90°) points toward destination
+          arrowContainer.style.transform = `translate(-50%, -50%) rotate(${edgeInfo.angle}deg)`;
           
           const arrowImg = document.createElement('img');
           arrowImg.src = 'Arrow.png';
