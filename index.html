@@ -78,7 +78,7 @@
       height: auto;
     }
 
-    #ownership-overlay, #hex-overlay, #destination-overlay, #army-overlay, #explosion-overlay, #arrow-overlay, #hex-label-overlay {
+    #ownership-overlay, #hex-overlay, #army-overlay, #explosion-overlay, #arrow-overlay, #hex-label-overlay, #destination-overlay {
       position: absolute;
       top: 0; left: 0;
       width: 100%; height: 100%;
@@ -91,6 +91,11 @@
 
     #destination-overlay {
       pointer-events: none;
+      z-index: 600;
+    }
+
+    #hex-label-overlay {
+      z-index: 601;
     }
 
     .army-stack {
@@ -111,6 +116,10 @@
       height: 37.5px;
       object-fit: contain;
       filter: drop-shadow(2px 2px 3px rgba(0,0,0,0.6));
+    }
+
+    .army-image.hidden {
+      opacity: 0;
     }
 
     .army-stack.conflict .army-image {
@@ -139,21 +148,23 @@
     }
 
     .destination-highlight {
-      fill: rgba(200, 220, 100, 0.4);
+      fill: rgba(200, 220, 100, 0.5);
       stroke: #ffff00;
-      stroke-width: 3;
+      stroke-width: 4;
+      filter: drop-shadow(0 0 8px #ffff00);
       pointer-events: none;
     }
 
     .destination-label {
       position: absolute;
       font-family: 'Times New Roman', serif;
-      font-size: 12px;
+      font-size: 18px;
       font-weight: bold;
       color: #ffff00;
-      text-shadow: 1px 1px 2px #000;
+      text-shadow: 2px 2px 4px #000, -2px -2px 4px #000, 2px -2px 4px #000, -2px 2px 4px #000;
       pointer-events: none;
       transform: translate(-50%, -50%);
+      z-index: 601;
     }
 
     .movement-arrow {
@@ -469,11 +480,11 @@
         <img id="mapImg" src="map.jpg">
         <svg id="ownership-overlay"></svg>
         <svg id="hex-overlay"></svg>
+        <div id="army-overlay"></div>
+        <div id="explosion-overlay"></div>
         <svg id="destination-overlay"></svg>
         <div id="hex-label-overlay"></div>
-        <div id="explosion-overlay"></div>
         <div id="arrow-overlay"></div>
-        <div id="army-overlay"></div>
       </div>
     </div>
   </div>
@@ -518,7 +529,7 @@
     let armyMap = {};
     let currentHex = null;
     let pendingMovements = [];
-    let movedArmies = new Set();
+    let movedQuantities = {}; // Track quantity moved per player per hex
     let hexPositions = {};
     let activeDestinationHexes = [];
 
@@ -617,8 +628,7 @@
 
       for (const hexKey of activeDestinationHexes) {
         if (hexPositions[hexKey]) {
-          const { cx, cy } = hexPositions[hexKey];
-          const r = 50; // Approximate radius
+          const { cx, cy, r } = hexPositions[hexKey];
           const pts = flatHexCorners(cx, cy, r - 1);
 
           const polygon = document.createElementNS('http://www.w3.org/2000/svg', 'polygon');
@@ -679,12 +689,6 @@
     }
 
     function showMoveForm(player, currentCount, fromHex) {
-      const moveKey = `${fromHex}_${player}`;
-      if (movedArmies.has(moveKey)) {
-        alert(`Jugador ${player + 1} ja ha mogut les seves tropes d'aquest hexagon aquest torn.`);
-        return;
-      }
-
       const moveFormId = `move-form-${player}`;
       const existingForm = document.getElementById(moveFormId);
       
@@ -719,7 +723,6 @@
         `;
         armyDetails.appendChild(moveForm);
 
-        // Show adjacent hexes on map
         activeDestinationHexes = adjacentHexes;
         drawDestinationHighlights();
       } else {
@@ -759,7 +762,9 @@
         quantity: quantity
       });
 
-      movedArmies.add(`${fromHex}_${player}`);
+      // Track moved quantity
+      const moveKey = `${fromHex}_${player}`;
+      movedQuantities[moveKey] = (movedQuantities[moveKey] || 0) + quantity;
 
       statusDiv.innerHTML = '<div class="status-message status-success">Moviment ordenat!</div>';
       
@@ -798,7 +803,7 @@
       }
 
       pendingMovements = [];
-      movedArmies.clear();
+      movedQuantities = {};
       activeDestinationHexes = [];
 
       if (currentHex) {
@@ -837,15 +842,12 @@
           blueSection.appendChild(blueTitle);
           
           for (const army of blueArmies) {
-            const moveKey = `${hexKey}_${army.player}`;
-            const alreadyMoved = movedArmies.has(moveKey);
-            
             const div = document.createElement('div');
             div.className = 'army-info';
             div.innerHTML = `
               <span class="army-info-label">Jugador ${army.player + 1}</span>
               <span class="army-info-value">${army.count}</span>
-              <button class="move-btn" ${alreadyMoved ? 'disabled' : ''} onclick="showMoveForm(${army.player}, ${army.count}, '${hexKey}')">${alreadyMoved ? '✓ Mogut' : 'Moure'}</button>
+              <button class="move-btn" onclick="showMoveForm(${army.player}, ${army.count}, '${hexKey}')">Moure</button>
             `;
             blueSection.appendChild(div);
           }
@@ -862,15 +864,12 @@
           redSection.appendChild(redTitle);
           
           for (const army of redArmies) {
-            const moveKey = `${hexKey}_${army.player}`;
-            const alreadyMoved = movedArmies.has(moveKey);
-            
             const div = document.createElement('div');
             div.className = 'army-info';
             div.innerHTML = `
               <span class="army-info-label">Jugador ${army.player + 1}</span>
               <span class="army-info-value">${army.count}</span>
-              <button class="move-btn" ${alreadyMoved ? 'disabled' : ''} onclick="showMoveForm(${army.player}, ${army.count}, '${hexKey}')">${alreadyMoved ? '✓ Mogut' : 'Moure'}</button>
+              <button class="move-btn" onclick="showMoveForm(${army.player}, ${army.count}, '${hexKey}')">Moure</button>
             `;
             redSection.appendChild(div);
           }
@@ -928,9 +927,22 @@
       hexLabelOverlay.innerHTML = '';
     }
 
-    function createArmyStack(armies, scale = 1, centerX = 0, centerY = 0, hasConflict = false) {
+    function createArmyStack(armies, scale = 1, centerX = 0, centerY = 0, hasConflict = false, hexKey = null) {
       const sortedArmies = [...armies].sort((a, b) => a.count - b.count);
-      const totalArmies = sortedArmies.reduce((sum, a) => sum + a.count, 0);
+      let totalArmies = sortedArmies.reduce((sum, a) => sum + a.count, 0);
+
+      // Subtract moved quantities
+      if (hexKey) {
+        for (const army of sortedArmies) {
+          const moveKey = `${hexKey}_${army.player}`;
+          const movedQty = movedQuantities[moveKey] || 0;
+          totalArmies -= movedQty;
+        }
+      }
+
+      if (totalArmies <= 0) {
+        return null; // Don't render stack if all armies have moved
+      }
 
       let stackSize = hasConflict ? 56.25 : 37.5;
       if (scale === 0.5) stackSize *= scale;
@@ -944,11 +956,20 @@
 
       let imageIndex = 0;
       for (const army of sortedArmies) {
+        const moveKey = hexKey ? `${hexKey}_${army.player}` : null;
+        const movedQty = moveKey ? (movedQuantities[moveKey] || 0) : 0;
+        const displayCount = army.count - movedQty;
+
         for (let i = 0; i < army.count; i++) {
           const armyImg = document.createElement('img');
           armyImg.className = 'army-image';
           armyImg.src = `Equip${army.player}.jpg`;
           armyImg.alt = `Jugador ${army.player + 1}`;
+          
+          // Hide images that are moving
+          if (i >= displayCount) {
+            armyImg.classList.add('hidden');
+          }
           
           const offsetX = imageIndex * 5 * scale;
           const offsetY = -imageIndex * 5 * scale;
@@ -1012,7 +1033,7 @@
           if (!team) continue;
           
           const cy = vr + row * hexH + (col % 2 === 1 ? vr : 0);
-          hexPositions[`${col}_${row}`] = { cx, cy };
+          hexPositions[`${col}_${row}`] = { cx, cy, r };
           const pts = flatHexCorners(cx, cy, r - 1);
 
           if (team === 'blau') blueCount++;
@@ -1067,14 +1088,14 @@
               explosionContainer.appendChild(explosionImg);
               explosionOverlay.appendChild(explosionContainer);
 
-              const blueStack = createArmyStack(blueArmies, 0.5, cx - r * 0.5, cy, true);
-              armyOverlay.appendChild(blueStack);
+              const blueStack = createArmyStack(blueArmies, 0.5, cx - r * 0.5, cy, true, hexKey);
+              if (blueStack) armyOverlay.appendChild(blueStack);
 
-              const redStack = createArmyStack(redArmies, 0.5, cx + r * 0.5, cy, true);
-              armyOverlay.appendChild(redStack);
+              const redStack = createArmyStack(redArmies, 0.5, cx + r * 0.5, cy, true, hexKey);
+              if (redStack) armyOverlay.appendChild(redStack);
             } else {
-              const stack = createArmyStack(armies, 1, cx, cy, false);
-              armyOverlay.appendChild(stack);
+              const stack = createArmyStack(armies, 1, cx, cy, false, hexKey);
+              if (stack) armyOverlay.appendChild(stack);
             }
           }
         }
