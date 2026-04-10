@@ -78,7 +78,7 @@
       height: auto;
     }
 
-    #ownership-overlay, #hex-overlay, #army-overlay, #explosion-overlay, #arrow-overlay, #hex-label-overlay, #destination-overlay {
+    #ownership-overlay, #hex-overlay, #army-overlay, #explosion-overlay, #hex-label-overlay, #destination-overlay, #arrow-overlay {
       position: absolute;
       top: 0; left: 0;
       width: 100%; height: 100%;
@@ -96,6 +96,10 @@
 
     #hex-label-overlay {
       z-index: 601;
+    }
+
+    #arrow-overlay {
+      z-index: 700;
     }
 
     .army-stack {
@@ -139,6 +143,8 @@
       text-shadow: 1px 1px 3px rgba(0,0,0,0.9), -1px -1px 3px rgba(0,0,0,0.9);
       z-index: 2000;
       pointer-events: none;
+      left: 0;
+      top: 0;
     }
 
     .army-stack.conflict .army-count {
@@ -167,21 +173,29 @@
       z-index: 601;
     }
 
-    .movement-arrow {
+    .movement-arrow-container {
       position: absolute;
       display: flex;
       align-items: center;
       justify-content: center;
-      font-weight: bold;
-      font-size: 14px;
-      z-index: 500;
+      z-index: 700;
       pointer-events: none;
     }
 
-    .movement-arrow::before {
-      content: '→';
-      font-size: 24px;
-      margin-right: 4px;
+    .movement-arrow-img {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+    }
+
+    .movement-count {
+      position: absolute;
+      font-weight: bold;
+      font-size: 14px;
+      color: #000;
+      text-shadow: 1px 1px 2px #fff;
+      z-index: 701;
+      pointer-events: none;
     }
 
     .side-panel {
@@ -529,9 +543,10 @@
     let armyMap = {};
     let currentHex = null;
     let pendingMovements = [];
-    let movedQuantities = {}; // Track quantity moved per player per hex
+    let movedQuantities = {};
     let hexPositions = {};
     let activeDestinationHexes = [];
+    let hexRadius = 50;
 
     function getTeamTextColor(player) {
       return player < 3 ? '#5a96ff' : '#ff4a4a';
@@ -636,7 +651,6 @@
           polygon.setAttribute('class', 'destination-highlight');
           destinationSvg.appendChild(polygon);
 
-          // Add hex label
           const label = document.createElement('div');
           label.className = 'destination-label';
           label.style.left = cx + 'px';
@@ -645,6 +659,31 @@
           hexLabelOverlay.appendChild(label);
         }
       }
+    }
+
+    function getDirectionToHex(fromHex, toHex) {
+      const [fromCol, fromRow] = fromHex.split('_').map(Number);
+      const [toCol, toRow] = toHex.split('_').map(Number);
+      
+      const fromPos = hexPositions[fromHex];
+      const toPos = hexPositions[toHex];
+      
+      if (!fromPos || !toPos) return 0;
+      
+      const dx = toPos.cx - fromPos.cx;
+      const dy = toPos.cy - fromPos.cy;
+      const angle = Math.atan2(dy, dx) * 180 / Math.PI;
+      
+      return angle;
+    }
+
+    function getEdgePointOnHex(cx, cy, r, angle) {
+      // Get point on hexagon edge at given angle
+      const rad = angle * Math.PI / 180;
+      return {
+        x: cx + r * Math.cos(rad),
+        y: cy + r * Math.sin(rad)
+      };
     }
 
     async function addMovementToSheet(fromHex, toHex, player, quantity) {
@@ -762,7 +801,6 @@
         quantity: quantity
       });
 
-      // Track moved quantity
       const moveKey = `${fromHex}_${player}`;
       movedQuantities[moveKey] = (movedQuantities[moveKey] || 0) + quantity;
 
@@ -931,7 +969,6 @@
       const sortedArmies = [...armies].sort((a, b) => a.count - b.count);
       let totalArmies = sortedArmies.reduce((sum, a) => sum + a.count, 0);
 
-      // Subtract moved quantities
       if (hexKey) {
         for (const army of sortedArmies) {
           const moveKey = `${hexKey}_${army.player}`;
@@ -941,7 +978,7 @@
       }
 
       if (totalArmies <= 0) {
-        return null; // Don't render stack if all armies have moved
+        return null;
       }
 
       let stackSize = hasConflict ? 56.25 : 37.5;
@@ -966,7 +1003,6 @@
           armyImg.src = `Equip${army.player}.jpg`;
           armyImg.alt = `Jugador ${army.player + 1}`;
           
-          // Hide images that are moving
           if (i >= displayCount) {
             armyImg.classList.add('hidden');
           }
@@ -992,8 +1028,8 @@
       countLabel.style.fontSize = (17.5 * scale) + 'px';
       countLabel.style.color = getTeamTextColor(sortedArmies[sortedArmies.length - 1].player);
       countLabel.style.zIndex = imageIndex + 1;
-      countLabel.style.left = ((imageIndex - 1) * 5 * scale) + 'px';
-      countLabel.style.top = (-(imageIndex - 1) * 5 * scale) + 'px';
+      countLabel.style.left = (((imageIndex - 1) * 5 * scale) - stackSize / 2) + 'px';
+      countLabel.style.top = (-(imageIndex - 1) * 5 * scale - stackSize / 2) + 'px';
       countLabel.textContent = totalArmies;
       
       stack.appendChild(countLabel);
@@ -1019,6 +1055,7 @@
       const rW = W / (2 + 1.5 * (COLS - 1));
       const rH = H / (ROWS * Math.sqrt(3) + 1);
       const r   = Math.min(rW, rH);
+      hexRadius = r;
       const hexH = Math.sqrt(3) * r;
       const vr  = hexH / 2;
 
@@ -1107,14 +1144,38 @@
         const toPos = hexPositions[movement.toHex];
         
         if (fromPos && toPos) {
-          const arrowDiv = document.createElement('div');
-          arrowDiv.className = 'movement-arrow';
-          arrowDiv.style.color = getTeamTextColor(movement.player);
-          arrowDiv.style.left = ((fromPos.cx + toPos.cx) / 2) + 'px';
-          arrowDiv.style.top = ((fromPos.cy + toPos.cy) / 2) + 'px';
-          arrowDiv.style.transform = 'translate(-50%, -50%)';
-          arrowDiv.textContent = movement.quantity;
-          arrowOverlay.appendChild(arrowDiv);
+          const angle = getDirectionToHex(movement.fromHex, movement.toHex);
+          const edgePoint = getEdgePointOnHex(fromPos.cx, fromPos.cy, fromPos.r, angle);
+          
+          const arrowContainer = document.createElement('div');
+          arrowContainer.className = 'movement-arrow-container';
+          arrowContainer.style.left = edgePoint.x + 'px';
+          arrowContainer.style.top = edgePoint.y + 'px';
+          
+          // Arrow size: triangle base is 75% of hexagon edge length
+          // Hexagon edge length ≈ radius
+          const arrowSize = fromPos.r * 2 * 0.75;
+          arrowContainer.style.width = arrowSize + 'px';
+          arrowContainer.style.height = arrowSize + 'px';
+          
+          arrowContainer.style.transform = `translate(-50%, -50%) rotate(${angle}deg)`;
+          
+          const arrowImg = document.createElement('img');
+          arrowImg.src = 'Arrow.png';
+          arrowImg.className = 'movement-arrow-img';
+          arrowImg.style.width = '100%';
+          arrowImg.style.height = '100%';
+          arrowContainer.appendChild(arrowImg);
+          
+          const countDiv = document.createElement('div');
+          countDiv.className = 'movement-count';
+          countDiv.style.left = '50%';
+          countDiv.style.top = '50%';
+          countDiv.style.transform = 'translate(-50%, -50%)';
+          countDiv.textContent = movement.quantity;
+          arrowContainer.appendChild(countDiv);
+          
+          arrowOverlay.appendChild(arrowContainer);
         }
       }
 
