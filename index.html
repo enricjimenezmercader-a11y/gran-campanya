@@ -85,7 +85,7 @@
       height: auto;
     }
 
-    #ownership-overlay, #hex-overlay, #army-overlay, #explosion-overlay, #hex-label-overlay, #destination-overlay, #arrow-overlay {
+    #ownership-overlay, #hex-overlay, #army-overlay, #explosion-overlay, #hex-label-overlay, #destination-overlay, #arrow-overlay, #battle-overlay {
       position: absolute;
       top: 0; left: 0;
       width: 100%; height: 100%;
@@ -107,6 +107,10 @@
 
     #arrow-overlay {
       z-index: 700;
+    }
+
+    #battle-overlay {
+      z-index: 650;
     }
 
     .action-buttons {
@@ -481,6 +485,81 @@
       color: #90c0ff;
       border: 1px solid #90c0ff;
     }
+
+    .battles-section {
+      margin-top: 2rem;
+      padding: 1rem;
+      background: rgba(201,168,76,0.1);
+      border: 2px solid #c9a84c;
+      border-radius: 4px;
+    }
+
+    .battles-section h3 {
+      font-size: 1.3rem;
+      margin-bottom: 1rem;
+      color: #c9a84c;
+      font-family: 'UnifrakturMaguntia', cursive;
+    }
+
+    .battle-item {
+      margin-bottom: 1.5rem;
+      padding: 1rem;
+      background: rgba(201,168,76,0.05);
+      border-left: 4px solid #c9a84c;
+      border-radius: 3px;
+    }
+
+    .battle-title {
+      font-weight: bold;
+      color: #c9a84c;
+      margin-bottom: 0.8rem;
+      font-size: 0.95rem;
+    }
+
+    .battle-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.85rem;
+    }
+
+    .battle-table th {
+      background: rgba(201,168,76,0.2);
+      color: #c9a84c;
+      padding: 0.5rem;
+      text-align: left;
+      border-bottom: 1px solid #c9a84c;
+      font-weight: bold;
+    }
+
+    .battle-table td {
+      padding: 0.5rem;
+      border-bottom: 1px solid rgba(201,168,76,0.3);
+      color: #fff;
+    }
+
+    .battle-table tr:last-child td {
+      border-bottom: none;
+    }
+
+    .battle-player {
+      color: #c9a84c;
+      font-weight: bold;
+    }
+
+    .battle-input {
+      width: 60px;
+      background: rgba(0,0,0,0.3);
+      border: 1px solid #c9a84c;
+      color: #fff;
+      padding: 0.3rem;
+      border-radius: 2px;
+      font-family: 'Times New Roman', serif;
+    }
+
+    .battle-input:focus {
+      outline: none;
+      box-shadow: 0 0 5px rgba(201,168,76,0.5);
+    }
   </style>
 </head>
 <body>
@@ -499,6 +578,7 @@
           <svg id="hex-overlay"></svg>
           <div id="army-overlay"></div>
           <div id="explosion-overlay"></div>
+          <div id="battle-overlay"></div>
           <svg id="destination-overlay"></svg>
           <div id="hex-label-overlay"></div>
           <div id="arrow-overlay"></div>
@@ -508,6 +588,7 @@
         <button class="btn-primary" onclick="endTurn()">Finalitzar moviment</button>
         <button class="btn-secondary" onclick="resetOrders()">Reseteja ordres</button>
       </div>
+      <div id="battlesDisplay"></div>
     </div>
   </div>
 
@@ -524,12 +605,14 @@
     const destinationSvg = document.getElementById('destination-overlay');
     const hexLabelOverlay = document.getElementById('hex-label-overlay');
     const explosionOverlay = document.getElementById('explosion-overlay');
+    const battleOverlay = document.getElementById('battle-overlay');
     const arrowOverlay = document.getElementById('arrow-overlay');
     const armyOverlay = document.getElementById('army-overlay');
     const sidePanel = document.getElementById('sidePanel');
     const backdrop = document.getElementById('backdrop');
     const hexName = document.getElementById('hexName');
     const armyDetails = document.getElementById('armyDetails');
+    const battlesDisplay = document.getElementById('battlesDisplay');
 
     const COLS = 12, ROWS = 5;
     const waterHexes = new Set(['2_1','3_1','4_0','4_1','5_0','6_0']);
@@ -554,9 +637,14 @@
     let hexPositions = {};
     let activeDestinationHexes = [];
     let hexRadius = 50;
+    let battles = []; // Store battle information
 
     function getTeamTextColor(player) {
       return player < 3 ? '#5a96ff' : '#ff4a4a';
+    }
+
+    function getPlayerTeam(player) {
+      return player < 3 ? 'blue' : 'red';
     }
 
     function parseGVizJSON(text) {
@@ -644,6 +732,54 @@
       return pts.join(' ');
     }
 
+    // Detect battles
+    function detectBattles() {
+      battles = [];
+      
+      // Group movements by hexagon pairs
+      const hexPairs = {};
+      
+      for (const movement of pendingMovements) {
+        const [fromCol, fromRow] = movement.fromHex.split('_').map(Number);
+        const [toCol, toRow] = movement.toHex.split('_').map(Number);
+        
+        const fromTeam = getPlayerTeam(movement.player);
+        const toTeamObj = teamOf(toCol, toRow);
+        const toTeam = toTeamObj === 'blau' ? 'blue' : 'red';
+        
+        // Only battles between different teams
+        if (fromTeam !== toTeam) {
+          const pairKey = [movement.fromHex, movement.toHex].sort().join('-');
+          
+          if (!hexPairs[pairKey]) {
+            hexPairs[pairKey] = {
+              hex1: movement.fromHex,
+              hex2: movement.toHex,
+              movements: []
+            };
+          }
+          hexPairs[pairKey].movements.push(movement);
+        }
+      }
+      
+      // Check for counter-movements (battles)
+      for (const pairKey in hexPairs) {
+        const pair = hexPairs[pairKey];
+        const [hex1, hex2] = [pair.hex1, pair.hex2];
+        
+        const forwardMovements = pair.movements.filter(m => m.fromHex === hex1 && m.toHex === hex2);
+        const backwardMovements = pair.movements.filter(m => m.fromHex === hex2 && m.toHex === hex1);
+        
+        if (forwardMovements.length > 0 && backwardMovements.length > 0) {
+          battles.push({
+            hex1: hex1,
+            hex2: hex2,
+            movements: pair.movements
+          });
+        }
+      }
+    }
+
     function drawDestinationHighlights() {
       destinationSvg.innerHTML = '';
       hexLabelOverlay.innerHTML = '';
@@ -681,7 +817,6 @@
       return angle;
     }
 
-    // Calculate arrow rotation based on direction to adjacent hex
     function getArrowRotation(fromHex, toHex) {
       const fromPos = hexPositions[fromHex];
       const toPos = hexPositions[toHex];
@@ -692,18 +827,13 @@
       const dy = toPos.cy - fromPos.cy;
       const angle = Math.atan2(dy, dx) * 180 / Math.PI;
       
-      // Round to nearest 60 degree increment (0, 60, 120, 180, 240, 300)
-      // Up = -90 degrees, so we map: -90->0, -30->60, 30->120, 90->180, 150->240, -150->300
-      let rotation = angle + 90; // Adjust so -90 (up) becomes 0
-      rotation = ((rotation % 360) + 360) % 360; // Normalize to 0-360
-      
-      // Round to nearest 60
+      let rotation = angle + 90;
+      rotation = ((rotation % 360) + 360) % 360;
       rotation = Math.round(rotation / 60) * 60;
       
       return rotation;
     }
 
-    // Position arrow inside the hex pointing toward the edge
     function getArrowPosition(fromHex, toHex, arrowSize) {
       const fromPos = hexPositions[fromHex];
       const toPos = hexPositions[toHex];
@@ -714,13 +844,24 @@
       const dy = toPos.cy - fromPos.cy;
       const angle = Math.atan2(dy, dx);
       
-      // Position arrow inside hex, pointing toward the edge
-      // Place it at 65% distance from center toward edge
       const distanceFromCenter = fromPos.r * 0.65;
       const x = fromPos.cx + Math.cos(angle) * distanceFromCenter;
       const y = fromPos.cy + Math.sin(angle) * distanceFromCenter;
       
       return { x, y };
+    }
+
+    // Get midpoint between two hexes for battle explosion
+    function getBattleMidpoint(hex1, hex2) {
+      const pos1 = hexPositions[hex1];
+      const pos2 = hexPositions[hex2];
+      
+      if (!pos1 || !pos2) return null;
+      
+      return {
+        x: (pos1.cx + pos2.cx) / 2,
+        y: (pos1.cy + pos2.cy) / 2
+      };
     }
 
     async function addMovementToSheet(fromHex, toHex, player, quantity) {
@@ -847,10 +988,8 @@
       destinationSvg.innerHTML = '';
       hexLabelOverlay.innerHTML = '';
 
-      // Refresh stack immediately
       drawAll();
       
-      // Update side panel
       setTimeout(() => {
         cancelMove(player, fromHex);
         showHexPanel(...currentHex.split('_').map(Number));
@@ -1094,6 +1233,59 @@
       return stack;
     }
 
+    function displayBattles() {
+      detectBattles();
+      
+      if (battles.length === 0) {
+        battlesDisplay.innerHTML = '';
+        return;
+      }
+
+      let html = '<div class="battles-section"><h3>⚔️ Batalles</h3>';
+      
+      for (let i = 0; i < battles.length; i++) {
+        const battle = battles[i];
+        html += `<div class="battle-item">
+          <div class="battle-title">Batalla ${i + 1}: ${battle.hex1} ↔ ${battle.hex2}</div>
+          <table class="battle-table">
+            <thead>
+              <tr>
+                <th>Jugador</th>
+                <th>Forces inicials</th>
+                <th>Perdues</th>
+                <th>Retirades</th>
+              </tr>
+            </thead>
+            <tbody>`;
+        
+        // Get unique players in this battle
+        const playersInBattle = new Set();
+        for (const movement of battle.movements) {
+          playersInBattle.add(movement.player);
+        }
+        
+        for (const player of Array.from(playersInBattle).sort((a, b) => a - b)) {
+          const playerMovements = battle.movements.filter(m => m.player === player);
+          const totalForces = playerMovements.reduce((sum, m) => sum + m.quantity, 0);
+          const battleId = `battle-${i}-player-${player}`;
+          
+          html += `<tr>
+            <td class="battle-player">Jugador ${player + 1}</td>
+            <td>${totalForces}</td>
+            <td><input type="number" id="${battleId}-lost" class="battle-input" min="0" max="${totalForces}" value="0"></td>
+            <td><input type="number" id="${battleId}-retired" class="battle-input" min="0" max="${totalForces}" value="0"></td>
+          </tr>`;
+        }
+        
+        html += `</tbody>
+          </table>
+        </div>`;
+      }
+      
+      html += '</div>';
+      battlesDisplay.innerHTML = html;
+    }
+
     function drawAll() {
       const W = img.offsetWidth;
       const H = img.offsetHeight;
@@ -1106,6 +1298,7 @@
       });
 
       explosionOverlay.innerHTML = '';
+      battleOverlay.innerHTML = '';
       arrowOverlay.innerHTML = '';
       armyOverlay.innerHTML = '';
 
@@ -1195,9 +1388,33 @@
         }
       }
 
-      // Draw movement arrows inside origin hexagons
+      // Draw battle explosions
+      detectBattles();
+      for (const battle of battles) {
+        const midpoint = getBattleMidpoint(battle.hex1, battle.hex2);
+        if (midpoint) {
+          const explosionContainer = document.createElement('div');
+          explosionContainer.style.position = 'absolute';
+          explosionContainer.style.left = (midpoint.x - r * 0.5) + 'px';
+          explosionContainer.style.top = (midpoint.y - r * 0.5) + 'px';
+          explosionContainer.style.width = (r * 1) + 'px';
+          explosionContainer.style.height = (r * 1) + 'px';
+          explosionContainer.style.pointerEvents = 'none';
+          
+          const explosionImg = document.createElement('img');
+          explosionImg.src = 'explosion.png';
+          explosionImg.style.width = '100%';
+          explosionImg.style.height = '100%';
+          explosionImg.style.opacity = '0.9';
+          explosionImg.style.objectFit = 'contain';
+          
+          explosionContainer.appendChild(explosionImg);
+          battleOverlay.appendChild(explosionContainer);
+        }
+      }
+
+      // Draw movement arrows
       for (const movement of pendingMovements) {
-        // Arrow is 75% the size
         const arrowSize = (hexRadius * 2 * 0.75) * 0.75;
         const arrowPos = getArrowPosition(movement.fromHex, movement.toHex, arrowSize);
         const arrowRotation = getArrowRotation(movement.fromHex, movement.toHex);
@@ -1211,7 +1428,6 @@
           arrowContainer.style.width = arrowSize + 'px';
           arrowContainer.style.height = arrowSize + 'px';
           
-          // Rotate the container but NOT the number
           arrowContainer.style.transform = `translate(-50%, -50%) rotate(${arrowRotation}deg)`;
           
           const arrowImg = document.createElement('img');
@@ -1225,7 +1441,6 @@
           countDiv.className = 'movement-count';
           countDiv.style.left = '50%';
           countDiv.style.top = '50%';
-          // Counter-rotate the number to keep it upright
           countDiv.style.transform = `translate(-50%, -50%) rotate(-${arrowRotation}deg)`;
           countDiv.textContent = movement.quantity;
           arrowContainer.appendChild(countDiv);
@@ -1233,6 +1448,9 @@
           arrowOverlay.appendChild(arrowContainer);
         }
       }
+
+      // Display battles table
+      displayBattles();
 
       document.getElementById('blue-count').textContent = blueCount;
       document.getElementById('red-count').textContent  = redCount;
