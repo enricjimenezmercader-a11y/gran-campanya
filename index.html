@@ -31,8 +31,15 @@
     .main-container {
       display: flex;
       gap: 2.5rem;
-      align-items: stretch;
+      align-items: flex-start;
       position: relative;
+    }
+
+    .map-section {
+      display: flex;
+      flex-direction: column;
+      gap: 1.5rem;
+      align-items: center;
     }
 
     .map-frame {
@@ -102,6 +109,43 @@
       z-index: 700;
     }
 
+    .action-buttons {
+      display: flex;
+      gap: 1rem;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+
+    .btn-primary, .btn-secondary {
+      padding: 0.8rem 2rem;
+      border-radius: 4px;
+      cursor: pointer;
+      font-family: 'Times New Roman', serif;
+      font-size: 1rem;
+      transition: all 0.2s;
+      border: 2px solid #c9a84c;
+      font-weight: bold;
+    }
+
+    .btn-primary {
+      background: #7a5c1e;
+      color: #c9a84c;
+    }
+
+    .btn-primary:hover {
+      background: #c9a84c;
+      color: #1a1208;
+    }
+
+    .btn-secondary {
+      background: rgba(201,168,76,0.1);
+      color: #c9a84c;
+    }
+
+    .btn-secondary:hover {
+      background: rgba(201,168,76,0.2);
+    }
+
     .army-stack {
       position: absolute;
       width: 37.5px;
@@ -133,8 +177,6 @@
 
     .army-count {
       position: absolute;
-      width: 37.5px;
-      height: 37.5px;
       display: flex;
       align-items: center;
       justify-content: center;
@@ -143,13 +185,9 @@
       text-shadow: 1px 1px 3px rgba(0,0,0,0.9), -1px -1px 3px rgba(0,0,0,0.9);
       z-index: 2000;
       pointer-events: none;
-      left: 0;
-      top: 0;
     }
 
     .army-stack.conflict .army-count {
-      width: 18.75px;
-      height: 18.75px;
       font-size: 10px;
     }
 
@@ -191,11 +229,13 @@
     .movement-count {
       position: absolute;
       font-weight: bold;
-      font-size: 14px;
+      font-size: 16px;
       color: #000;
       text-shadow: 1px 1px 2px #fff;
       z-index: 701;
       pointer-events: none;
+      writing-mode: vertical-rl;
+      text-orientation: mixed;
     }
 
     .side-panel {
@@ -401,26 +441,6 @@
       margin: 0.3rem 0;
     }
 
-    .end-turn-btn {
-      background: #7a5c1e;
-      border: 2px solid #c9a84c;
-      color: #c9a84c;
-      padding: 0.7rem 1.5rem;
-      border-radius: 4px;
-      cursor: pointer;
-      font-family: 'Times New Roman', serif;
-      font-size: 1rem;
-      margin-top: 1.5rem;
-      transition: all 0.2s;
-      width: 100%;
-      font-weight: bold;
-    }
-
-    .end-turn-btn:hover {
-      background: #c9a84c;
-      color: #1a1208;
-    }
-
     .close-btn {
       background: #7a5c1e;
       border: 2px solid #c9a84c;
@@ -487,18 +507,24 @@
   <div class="overlay-backdrop" id="backdrop"></div>
 
   <div class="main-container">
-    <div class="map-frame">
-      <span class="corner-tr"></span>
-      <span class="corner-bl"></span>
-      <div class="map-wrapper">
-        <img id="mapImg" src="map.jpg">
-        <svg id="ownership-overlay"></svg>
-        <svg id="hex-overlay"></svg>
-        <div id="army-overlay"></div>
-        <div id="explosion-overlay"></div>
-        <svg id="destination-overlay"></svg>
-        <div id="hex-label-overlay"></div>
-        <div id="arrow-overlay"></div>
+    <div class="map-section">
+      <div class="map-frame">
+        <span class="corner-tr"></span>
+        <span class="corner-bl"></span>
+        <div class="map-wrapper">
+          <img id="mapImg" src="map.jpg">
+          <svg id="ownership-overlay"></svg>
+          <svg id="hex-overlay"></svg>
+          <div id="army-overlay"></div>
+          <div id="explosion-overlay"></div>
+          <svg id="destination-overlay"></svg>
+          <div id="hex-label-overlay"></div>
+          <div id="arrow-overlay"></div>
+        </div>
+      </div>
+      <div class="action-buttons">
+        <button class="btn-primary" onclick="endTurn()">Finalitzar moviment</button>
+        <button class="btn-secondary" onclick="resetOrders()">Reseteja ordres</button>
       </div>
     </div>
   </div>
@@ -506,7 +532,6 @@
   <div id="sidePanel" class="side-panel">
     <h2 id="hexName">Hexagon</h2>
     <div id="armyDetails"></div>
-    <button class="end-turn-btn" onclick="endTurn()">End Turn</button>
     <button class="close-btn" onclick="closeSidePanel()">Close</button>
   </div>
 
@@ -662,9 +687,6 @@
     }
 
     function getDirectionToHex(fromHex, toHex) {
-      const [fromCol, fromRow] = fromHex.split('_').map(Number);
-      const [toCol, toRow] = toHex.split('_').map(Number);
-      
       const fromPos = hexPositions[fromHex];
       const toPos = hexPositions[toHex];
       
@@ -675,15 +697,6 @@
       const angle = Math.atan2(dy, dx) * 180 / Math.PI;
       
       return angle;
-    }
-
-    function getEdgePointOnHex(cx, cy, r, angle) {
-      // Get point on hexagon edge at given angle
-      const rad = angle * Math.PI / 180;
-      return {
-        x: cx + r * Math.cos(rad),
-        y: cy + r * Math.sin(rad)
-      };
     }
 
     async function addMovementToSheet(fromHex, toHex, player, quantity) {
@@ -850,6 +863,28 @@
       drawAll();
 
       alert('Torn completat!');
+    };
+
+    window.resetOrders = function() {
+      if (pendingMovements.length === 0) {
+        alert('No hi ha moviments ordenats per esborrar.');
+        return;
+      }
+
+      if (!confirm('Estàs segur que vols esborrar tots els ordres?')) {
+        return;
+      }
+
+      pendingMovements = [];
+      movedQuantities = {};
+      activeDestinationHexes = [];
+
+      if (currentHex) {
+        showHexPanel(...currentHex.split('_').map(Number));
+      }
+      drawAll();
+
+      alert('Ordres esborrades!');
     };
 
     function showHexPanel(col, row) {
@@ -1028,9 +1063,9 @@
       countLabel.style.fontSize = (17.5 * scale) + 'px';
       countLabel.style.color = getTeamTextColor(sortedArmies[sortedArmies.length - 1].player);
       countLabel.style.zIndex = imageIndex + 1;
-      countLabel.style.left = (((imageIndex - 1) * 5 * scale) - stackSize / 2) + 'px';
-      countLabel.style.top = (-(imageIndex - 1) * 5 * scale - stackSize / 2) + 'px';
       countLabel.textContent = totalArmies;
+      countLabel.style.left = 0;
+      countLabel.style.top = 0;
       
       stack.appendChild(countLabel);
       
@@ -1145,15 +1180,17 @@
         
         if (fromPos && toPos) {
           const angle = getDirectionToHex(movement.fromHex, movement.toHex);
-          const edgePoint = getEdgePointOnHex(fromPos.cx, fromPos.cy, fromPos.r, angle);
+          
+          // Position arrow in the middle of the hex, pointing toward destination
+          const midX = (fromPos.cx + toPos.cx) / 2;
+          const midY = (fromPos.cy + toPos.cy) / 2;
           
           const arrowContainer = document.createElement('div');
           arrowContainer.className = 'movement-arrow-container';
-          arrowContainer.style.left = edgePoint.x + 'px';
-          arrowContainer.style.top = edgePoint.y + 'px';
+          arrowContainer.style.left = midX + 'px';
+          arrowContainer.style.top = midY + 'px';
           
           // Arrow size: triangle base is 75% of hexagon edge length
-          // Hexagon edge length ≈ radius
           const arrowSize = fromPos.r * 2 * 0.75;
           arrowContainer.style.width = arrowSize + 'px';
           arrowContainer.style.height = arrowSize + 'px';
