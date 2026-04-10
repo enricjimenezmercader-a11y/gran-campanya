@@ -78,7 +78,7 @@
       height: auto;
     }
 
-    #ownership-overlay, #hex-overlay, #army-overlay, #explosion-overlay, #arrow-overlay {
+    #ownership-overlay, #hex-overlay, #destination-overlay, #army-overlay, #explosion-overlay, #arrow-overlay, #hex-label-overlay {
       position: absolute;
       top: 0; left: 0;
       width: 100%; height: 100%;
@@ -87,6 +87,10 @@
 
     #ownership-overlay {
       pointer-events: auto;
+    }
+
+    #destination-overlay {
+      pointer-events: none;
     }
 
     .army-stack {
@@ -132,6 +136,24 @@
       width: 18.75px;
       height: 18.75px;
       font-size: 10px;
+    }
+
+    .destination-highlight {
+      fill: rgba(200, 220, 100, 0.4);
+      stroke: #ffff00;
+      stroke-width: 3;
+      pointer-events: none;
+    }
+
+    .destination-label {
+      position: absolute;
+      font-family: 'Times New Roman', serif;
+      font-size: 12px;
+      font-weight: bold;
+      color: #ffff00;
+      text-shadow: 1px 1px 2px #000;
+      pointer-events: none;
+      transform: translate(-50%, -50%);
     }
 
     .movement-arrow {
@@ -447,6 +469,8 @@
         <img id="mapImg" src="map.jpg">
         <svg id="ownership-overlay"></svg>
         <svg id="hex-overlay"></svg>
+        <svg id="destination-overlay"></svg>
+        <div id="hex-label-overlay"></div>
         <div id="explosion-overlay"></div>
         <div id="arrow-overlay"></div>
         <div id="army-overlay"></div>
@@ -465,6 +489,8 @@
     const img    = document.getElementById('mapImg');
     const svgOwn = document.getElementById('ownership-overlay');
     const svgHex = document.getElementById('hex-overlay');
+    const destinationSvg = document.getElementById('destination-overlay');
+    const hexLabelOverlay = document.getElementById('hex-label-overlay');
     const explosionOverlay = document.getElementById('explosion-overlay');
     const arrowOverlay = document.getElementById('arrow-overlay');
     const armyOverlay = document.getElementById('army-overlay');
@@ -491,8 +517,10 @@
     let teamMap = {};
     let armyMap = {};
     let currentHex = null;
-    let pendingMovements = []; // Store pending movements until end turn
-    let movedArmies = new Set(); // Track which armies have moved this turn
+    let pendingMovements = [];
+    let movedArmies = new Set();
+    let hexPositions = {};
+    let activeDestinationHexes = [];
 
     function getTeamTextColor(player) {
       return player < 3 ? '#5a96ff' : '#ff4a4a';
@@ -583,6 +611,32 @@
       return pts.join(' ');
     }
 
+    function drawDestinationHighlights() {
+      destinationSvg.innerHTML = '';
+      hexLabelOverlay.innerHTML = '';
+
+      for (const hexKey of activeDestinationHexes) {
+        if (hexPositions[hexKey]) {
+          const { cx, cy } = hexPositions[hexKey];
+          const r = 50; // Approximate radius
+          const pts = flatHexCorners(cx, cy, r - 1);
+
+          const polygon = document.createElementNS('http://www.w3.org/2000/svg', 'polygon');
+          polygon.setAttribute('points', pts);
+          polygon.setAttribute('class', 'destination-highlight');
+          destinationSvg.appendChild(polygon);
+
+          // Add hex label
+          const label = document.createElement('div');
+          label.className = 'destination-label';
+          label.style.left = cx + 'px';
+          label.style.top = cy + 'px';
+          label.textContent = hexKey;
+          hexLabelOverlay.appendChild(label);
+        }
+      }
+    }
+
     async function addMovementToSheet(fromHex, toHex, player, quantity) {
       try {
         const formData = new FormData();
@@ -653,21 +707,37 @@
         
         moveForm.innerHTML = `
           <label>Jugador ${player + 1} - Moure ${currentCount} exèrcits</label>
-          <select id="dest-hex-${player}">
+          <select id="dest-hex-${player}" onchange="updateDestinationHighlight(this.value, '${fromHex}')">
             ${selectOptions}
           </select>
           <input type="number" id="qty-${player}" min="1" max="${currentCount}" value="1" placeholder="Quantitat">
           <div id="status-${player}"></div>
           <div class="move-form-buttons">
             <button class="submit-move" onclick="orderMovement('${fromHex}', ${player}, ${currentCount})">Ordenar</button>
-            <button class="cancel-move" onclick="cancelMove(${player})">Cancel·lar</button>
+            <button class="cancel-move" onclick="cancelMove(${player}, '${fromHex}')">Cancel·lar</button>
           </div>
         `;
         armyDetails.appendChild(moveForm);
+
+        // Show adjacent hexes on map
+        activeDestinationHexes = adjacentHexes;
+        drawDestinationHighlights();
       } else {
         existingForm.classList.add('active');
+        activeDestinationHexes = adjacentHexes;
+        drawDestinationHighlights();
       }
     }
+
+    window.updateDestinationHighlight = function(selectedHex, fromHex) {
+      if (!selectedHex) {
+        const [fromCol, fromRow] = fromHex.split('_').map(Number);
+        activeDestinationHexes = getAdjacentHexes(fromCol, fromRow);
+      } else {
+        activeDestinationHexes = [selectedHex];
+      }
+      drawDestinationHighlights();
+    };
 
     window.orderMovement = function(fromHex, player, currentCount) {
       const destHexSelect = document.getElementById(`dest-hex-${player}`);
@@ -682,7 +752,6 @@
         return;
       }
 
-      // Add to pending movements
       pendingMovements.push({
         fromHex: fromHex,
         toHex: toHex,
@@ -690,23 +759,29 @@
         quantity: quantity
       });
 
-      // Mark this army as moved
       movedArmies.add(`${fromHex}_${player}`);
 
       statusDiv.innerHTML = '<div class="status-message status-success">Moviment ordenat!</div>';
       
+      activeDestinationHexes = [];
+      destinationSvg.innerHTML = '';
+      hexLabelOverlay.innerHTML = '';
+
       setTimeout(() => {
-        cancelMove(player);
+        cancelMove(player, fromHex);
         showHexPanel(...currentHex.split('_').map(Number));
         drawAll();
       }, 800);
     };
 
-    window.cancelMove = function(player) {
+    window.cancelMove = function(player, fromHex) {
       const moveForm = document.getElementById(`move-form-${player}`);
       if (moveForm) {
         moveForm.classList.remove('active');
       }
+      activeDestinationHexes = [];
+      destinationSvg.innerHTML = '';
+      hexLabelOverlay.innerHTML = '';
     };
 
     window.endTurn = async function() {
@@ -717,17 +792,15 @@
 
       console.log('Executing movements:', pendingMovements);
 
-      // Execute all movements
       for (const movement of pendingMovements) {
         await addMovementToSheet(movement.fromHex, movement.toHex, movement.player, movement.quantity);
         updateLocalArmies(movement.fromHex, movement.toHex, movement.player, movement.quantity);
       }
 
-      // Clear pending movements and moved armies for next turn
       pendingMovements = [];
       movedArmies.clear();
+      activeDestinationHexes = [];
 
-      // Refresh display
       if (currentHex) {
         showHexPanel(...currentHex.split('_').map(Number));
       }
@@ -850,6 +923,9 @@
     function closeSidePanel() {
       sidePanel.classList.remove('active');
       backdrop.classList.remove('active');
+      activeDestinationHexes = [];
+      destinationSvg.innerHTML = '';
+      hexLabelOverlay.innerHTML = '';
     }
 
     function createArmyStack(armies, scale = 1, centerX = 0, centerY = 0, hasConflict = false) {
@@ -868,12 +944,6 @@
 
       let imageIndex = 0;
       for (const army of sortedArmies) {
-        // Calculate how many armies of this player are moving
-        const movedCount = pendingMovements
-          .filter(m => m.fromHex.split('_').slice(0, 2).join('_') === 
-                      stack.style.left && m.player === army.player)
-          .reduce((sum, m) => sum + m.quantity, 0);
-        
         for (let i = 0; i < army.count; i++) {
           const armyImg = document.createElement('img');
           armyImg.className = 'army-image';
@@ -914,11 +984,11 @@
       const W = img.offsetWidth;
       const H = img.offsetHeight;
 
-      [svgOwn, svgHex].forEach(s => {
+      [svgOwn, svgHex, destinationSvg].forEach(s => {
         s.setAttribute('viewBox', `0 0 ${W} ${H}`);
         s.setAttribute('width', W);
         s.setAttribute('height', H);
-        s.innerHTML = '';
+        if (s !== destinationSvg) s.innerHTML = '';
       });
 
       explosionOverlay.innerHTML = '';
@@ -933,8 +1003,7 @@
 
       let blueCount = 0, redCount = 0;
 
-      // Store hex positions for arrow drawing
-      const hexPositions = {};
+      hexPositions = {};
 
       for (let col = 0; col < COLS; col++) {
         const cx = r + col * 1.5 * r;
