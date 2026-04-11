@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Gran Campanya - Deployment Only</title>
+  <title>Gran Campanya - Movement Only</title>
   <link href="https://fonts.googleapis.com/css2?family=UnifrakturMaguntia&display=swap" rel="stylesheet">
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -39,7 +39,7 @@
     }
 
     .panel {
-      width: 300px;
+      width: 350px;
       background: #2a1f0f;
       border: 2px solid #7a5c1e;
       padding: 20px;
@@ -57,73 +57,83 @@
       padding-bottom: 10px;
     }
 
-    .team-section {
-      margin-bottom: 15px;
+    .side-panel {
+      width: 350px;
+      background: #2a1f0f;
+      border: 2px solid #7a5c1e;
+      padding: 20px;
+      color: #c9a84c;
+      font-family: 'Times New Roman', serif;
+      border-radius: 4px;
+      max-height: 75vh;
+      overflow-y: auto;
+      display: none;
     }
 
+    .side-panel.active {
+      display: block;
+    }
+
+    .side-panel h2 {
+      font-size: 1.3rem;
+      margin-bottom: 15px;
+      border-bottom: 2px solid #7a5c1e;
+      padding-bottom: 10px;
+    }
+
+    .team-section {
+      margin-bottom: 15px;
+      padding: 10px;
+      background: rgba(201,168,76,0.05);
+      border-left: 3px solid;
+      border-radius: 2px;
+    }
+
+    .team-section.blue { border-color: #5a96ff; }
+    .team-section.red { border-color: #ff4a4a; }
+
     .team-section h3 {
-      font-size: 1rem;
-      margin: 15px 0 10px 0;
-      padding-bottom: 5px;
-      border-bottom: 1px solid rgba(201,168,76,0.3);
+      font-size: 0.95rem;
+      margin-bottom: 8px;
+      font-weight: bold;
     }
 
     .team-section.blue h3 { color: #5a96ff; }
     .team-section.red h3 { color: #ff4a4a; }
 
-    .player-btn {
-      display: block;
-      width: 100%;
-      padding: 10px;
+    .army-info {
       margin: 5px 0;
-      background: #1a1208;
-      border: 2px solid #7a5c1e;
-      color: #c9a84c;
-      cursor: pointer;
-      border-radius: 3px;
-      transition: all 0.2s;
-      font-weight: bold;
-      font-size: 0.9rem;
-    }
-
-    .player-btn:hover {
-      background: #7a5c1e;
-    }
-
-    .player-btn.active {
-      background: #c9a84c;
-      color: #1a1208;
-      border-color: #c9a84c;
-    }
-
-    .player-info {
-      margin-top: 10px;
-      padding: 10px;
+      padding: 6px;
       background: rgba(201,168,76,0.1);
-      border-left: 3px solid #c9a84c;
       border-radius: 2px;
       font-size: 0.85rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
     }
 
-    .status {
-      margin-top: 20px;
-      padding: 15px;
-      background: #1a1208;
-      border: 1px solid #7a5c1e;
-      border-radius: 3px;
-      font-size: 0.9rem;
+    .move-btn {
+      background: #7a5c1e;
+      border: 1px solid #c9a84c;
+      color: #c9a84c;
+      padding: 3px 6px;
+      border-radius: 2px;
+      cursor: pointer;
+      font-size: 0.75rem;
+      transition: all 0.2s;
+      margin-left: 5px;
     }
 
-    .status-label {
-      color: #7a5c1e;
-      font-size: 0.8rem;
-      margin-bottom: 5px;
+    .move-btn:hover {
+      background: #c9a84c;
+      color: #1a1208;
     }
 
-    .status-value {
-      color: #fff;
-      font-size: 1.1rem;
-      font-weight: bold;
+    .move-btn:disabled {
+      background: #5a5a5a;
+      color: #8a8a8a;
+      cursor: not-allowed;
+      border-color: #8a8a8a;
     }
 
     .map-section {
@@ -161,6 +171,75 @@
       height: 100%;
     }
 
+    #army-overlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+    }
+
+    .army-stack {
+      position: absolute;
+      width: 35px;
+      height: 35px;
+      pointer-events: none;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: bold;
+      font-size: 13px;
+      border-radius: 50%;
+      border: 2px solid #fff;
+      text-shadow: 1px 1px 3px #000;
+    }
+
+    .army-stack.blue {
+      background: rgba(90, 150, 255, 0.8);
+      color: #fff;
+    }
+
+    .army-stack.red {
+      background: rgba(255, 74, 74, 0.8);
+      color: #fff;
+    }
+
+    .buttons {
+      margin-top: 15px;
+      display: flex;
+      gap: 10px;
+    }
+
+    .btn {
+      flex: 1;
+      padding: 10px;
+      background: #7a5c1e;
+      border: 2px solid #c9a84c;
+      color: #c9a84c;
+      cursor: pointer;
+      border-radius: 3px;
+      font-weight: bold;
+      transition: all 0.2s;
+    }
+
+    .btn:hover {
+      background: #c9a84c;
+      color: #1a1208;
+    }
+
+    .close-btn {
+      background: #5a5a5a;
+      border-color: #8a8a8a;
+      color: #8a8a8a;
+      margin-top: 10px;
+    }
+
+    .close-btn:hover {
+      background: #8a8a8a;
+      color: #1a1208;
+    }
+
     .log {
       width: 300px;
       background: #000;
@@ -182,64 +261,32 @@
     .log-success { color: #0f0; }
     .log-error { color: #ff4444; }
     .log-info { color: #00ffff; }
-
-    .end-btn {
-      margin-top: 15px;
-      padding: 10px;
-      width: 100%;
-      background: #5a5a5a;
-      border: 2px solid #8a8a8a;
-      color: #8a8a8a;
-      cursor: not-allowed;
-      border-radius: 3px;
-      font-weight: bold;
-      transition: all 0.2s;
-    }
-
-    .end-btn.ready {
-      background: #7a5c1e;
-      border-color: #c9a84c;
-      color: #c9a84c;
-      cursor: pointer;
-    }
-
-    .end-btn.ready:hover {
-      background: #c9a84c;
-      color: #1a1208;
-    }
   </style>
 </head>
 <body>
-  <h1>🎮 Gran Campanya - DEPLOYMENT PHASE</h1>
-  <div class="version">Deployment Only | Real Data & Map</div>
+  <h1>🎮 Gran Campanya - MOVEMENT PHASE</h1>
+  <div class="version">Movement Only | Real Data & Map</div>
 
   <div class="container">
-    <!-- Deployment Panel -->
+    <!-- Info Panel -->
     <div class="panel">
-      <h2>📋 Desplegament</h2>
-      
-      <div class="team-section blue">
-        <h3>🔵 Equip Blau</h3>
-        <button class="player-btn" onclick="selectPlayer(0)">Jugador 1</button>
-        <button class="player-btn" onclick="selectPlayer(1)">Jugador 2</button>
-        <button class="player-btn" onclick="selectPlayer(2)">Jugador 3</button>
+      <h2>📍 Movement Phase</h2>
+      <p style="font-size: 0.9rem; margin-bottom: 15px; color: #7a5c1e;">
+        Pre-deployed with armies on their starting hexagons. Click a hexagon to select armies and move them.
+      </p>
+
+      <div style="margin-top: 15px; padding: 12px; background: #1a1208; border: 1px solid #7a5c1e; border-radius: 3px; font-size: 0.85rem;">
+        <strong>Instructions:</strong><br>
+        1. Click hexagon with armies<br>
+        2. Click "Move" button<br>
+        3. Select destination<br>
+        4. Confirm movement
       </div>
 
-      <div class="team-section red">
-        <h3>🔴 Equip Vermell</h3>
-        <button class="player-btn" onclick="selectPlayer(3)">Jugador 4</button>
-        <button class="player-btn" onclick="selectPlayer(4)">Jugador 5</button>
-        <button class="player-btn" onclick="selectPlayer(5)">Jugador 6</button>
+      <div class="buttons">
+        <button class="btn" onclick="endTurn()">✓ End Turn</button>
+        <button class="btn" onclick="resetOrders()" style="flex: 0.7;">Reset</button>
       </div>
-
-      <div class="status">
-        <div class="status-label">SELECTED:</div>
-        <div class="status-value" id="selected">None</div>
-        <div class="status-label" style="margin-top: 10px;">REMAINING:</div>
-        <div class="status-value" id="remaining">-</div>
-      </div>
-
-      <button class="end-btn" id="endBtn" onclick="endDeployment()">✓ End Deployment</button>
     </div>
 
     <!-- Map Section -->
@@ -254,6 +301,13 @@
       </div>
     </div>
 
+    <!-- Side Panel (shows when hex clicked) -->
+    <div class="side-panel" id="sidePanel">
+      <h2 id="hexName">Hexagon</h2>
+      <div id="armyDetails"></div>
+      <button class="btn close-btn" onclick="closeSidePanel()">Close</button>
+    </div>
+
     <!-- Log Panel -->
     <div class="log" id="log"></div>
   </div>
@@ -264,6 +318,7 @@
     const svgOwn = document.getElementById('ownership-overlay');
     const svgHex = document.getElementById('hex-overlay');
     const armyOverlay = document.getElementById('army-overlay');
+    const sidePanel = document.getElementById('sidePanel');
     const logElement = document.getElementById('log');
 
     const COLS = 12, ROWS = 5;
@@ -272,11 +327,10 @@
     const SHEET_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json`;
 
     let teamMap = {};
+    let armyMap = {};
     let hexPositions = {};
-    let selectedPlayer = null;
-    let deploymentRemaining = [0, 0, 0, 0, 0, 0];
-    let deployedArmies = {};
-    let deploymentArmies = [0, 0, 0, 0, 0, 0];
+    let currentHex = null;
+    let pendingMovements = [];
 
     function log(msg, type = 'info') {
       const entry = document.createElement('div');
@@ -289,6 +343,7 @@
 
     function parseGVizJSON(text) {
       const map = {};
+      const armyData = {};
       const json = JSON.parse(text.replace(/^[^(]+\(/, '').replace(/\);?\s*$/, ''));
       const rows = json.table.rows;
       
@@ -298,8 +353,16 @@
         const team = (row.c[1].v || '').toString().trim().toLowerCase();
         if (hex) {
           map[hex] = team;
+          armyData[hex] = [];
+          for (let i = 0; i < 6; i++) {
+            const count = row.c[i + 2] ? parseInt(row.c[i + 2].v || 0) : 0;
+            if (count > 0) {
+              armyData[hex].push({ player: i, count: count });
+            }
+          }
         }
       }
+      armyMap = armyData;
       return map;
     }
 
@@ -313,6 +376,35 @@
       return player < 3 ? 'blue' : 'red';
     }
 
+    function getAdjacentHexes(col, row) {
+      const adjacent = [];
+      
+      if (col % 2 === 0) {
+        const neighbors = [
+          [col - 1, row - 1], [col - 1, row],
+          [col, row - 1], [col, row + 1],
+          [col + 1, row - 1], [col + 1, row]
+        ];
+        for (const [c, r] of neighbors) {
+          if (c >= 0 && c < COLS && r >= 0 && r < ROWS && teamOf(c, r)) {
+            adjacent.push(`${c}_${r}`);
+          }
+        }
+      } else {
+        const neighbors = [
+          [col - 1, row], [col - 1, row + 1],
+          [col, row - 1], [col, row + 1],
+          [col + 1, row], [col + 1, row + 1]
+        ];
+        for (const [c, r] of neighbors) {
+          if (c >= 0 && c < COLS && r >= 0 && r < ROWS && teamOf(c, r)) {
+            adjacent.push(`${c}_${r}`);
+          }
+        }
+      }
+      return adjacent;
+    }
+
     function flatHexCorners(cx, cy, rv) {
       const pts = [];
       for (let i = 0; i < 6; i++) {
@@ -320,34 +412,6 @@
         pts.push(`${cx + rv * Math.cos(angle)},${cy + rv * Math.sin(angle)}`);
       }
       return pts.join(' ');
-    }
-
-    function initializeDeployment() {
-      log('Initializing deployment...', 'info');
-      
-      const teamCounts = { blue: 0, red: 0 };
-
-      for (let col = 0; col < COLS; col++) {
-        for (let row = 0; row < ROWS; row++) {
-          const team = teamOf(col, row);
-          if (team === 'blau') teamCounts.blue++;
-          else if (team === 'vermell') teamCounts.red++;
-        }
-      }
-
-      log(`Team counts: Blue=${teamCounts.blue}, Red=${teamCounts.red}`, 'info');
-
-      for (let i = 0; i < 6; i++) {
-        const team = getPlayerTeam(i);
-        const teamTotal = team === 'blue' ? teamCounts.blue : teamCounts.red;
-        const perPlayer = Math.floor(teamTotal / 3);
-        deploymentArmies[i] = perPlayer;
-        deploymentRemaining[i] = perPlayer;
-        log(`Player ${i + 1}: ${perPlayer} armies to deploy`, 'info');
-      }
-
-      deployedArmies = {};
-      drawAll();
     }
 
     function drawAll() {
@@ -395,7 +459,7 @@
           (function(c, r) {
             fill.addEventListener('click', function(e) {
               e.stopPropagation();
-              deploymentHexClick(c, r);
+              showHexPanel(c, r);
             });
           })(col, row);
           
@@ -409,116 +473,89 @@
           poly.setAttribute('stroke-width', '2.5');
           poly.setAttribute('pointer-events', 'none');
           svgHex.appendChild(poly);
-
-          // DRAW DEPLOYED ARMIES
-          const hexKey = `${col}_${row}`;
-          const deployedHere = deployedArmies[hexKey] || {};
-          
-          if (Object.keys(deployedHere).length > 0) {
-            const armyDiv = document.createElement('div');
-            armyDiv.style.position = 'absolute';
-            armyDiv.style.left = (cx - 15) + 'px';
-            armyDiv.style.top = (cy - 15) + 'px';
-            armyDiv.style.width = '30px';
-            armyDiv.style.height = '30px';
-            armyDiv.style.borderRadius = '50%';
-            armyDiv.style.border = '2px solid #c9a84c';
-            armyDiv.style.background = 'rgba(201,168,76,0.3)';
-            armyDiv.style.display = 'flex';
-            armyDiv.style.alignItems = 'center';
-            armyDiv.style.justifyContent = 'center';
-            armyDiv.style.fontSize = '12px';
-            armyDiv.style.fontWeight = 'bold';
-            armyDiv.style.color = '#c9a84c';
-            armyDiv.style.pointerEvents = 'none';
-            
-            let totalCount = 0;
-            for (const player in deployedHere) {
-              totalCount += deployedHere[player];
-            }
-            armyDiv.textContent = totalCount;
-            armyOverlay.appendChild(armyDiv);
-          }
         }
       }
+
+      // Draw armies
+      for (const [hexKey, armies] of Object.entries(armyMap)) {
+        if (!armies || armies.length === 0) continue;
+        
+        const pos = hexPositions[hexKey];
+        if (!pos) continue;
+
+        let totalCount = 0;
+        let teamColor = 'blue';
+        for (const army of armies) {
+          totalCount += army.count;
+          teamColor = getPlayerTeam(army.player);
+        }
+
+        const armyDiv = document.createElement('div');
+        armyDiv.className = `army-stack ${teamColor}`;
+        armyDiv.style.left = (pos.cx - 17.5) + 'px';
+        armyDiv.style.top = (pos.cy - 17.5) + 'px';
+        armyDiv.textContent = totalCount;
+        armyOverlay.appendChild(armyDiv);
+      }
     }
 
-    function deploymentHexClick(col, row) {
+    function showHexPanel(col, row) {
       const hexKey = `${col}_${row}`;
-      log(`[CLICK] ${hexKey}`, 'info');
+      log(`[HEX CLICK] ${hexKey}`, 'info');
       
-      if (selectedPlayer === null) {
-        log(`  ✗ No player selected`, 'error');
-        return;
-      }
+      currentHex = hexKey;
+      document.getElementById('hexName').textContent = hexKey;
+      const armyDetails = document.getElementById('armyDetails');
+      armyDetails.innerHTML = '';
 
-      if (deploymentRemaining[selectedPlayer] <= 0) {
-        log(`  ✗ Player ${selectedPlayer + 1} has no armies left`, 'error');
-        return;
-      }
-
-      const playerTeam = getPlayerTeam(selectedPlayer);
-      const hexTeam = teamOf(col, row);
-
-      if ((playerTeam === 'blue' && hexTeam !== 'blau') || 
-          (playerTeam === 'red' && hexTeam !== 'vermell')) {
-        log(`  ✗ Team mismatch: player=${playerTeam}, hex=${hexTeam}`, 'error');
-        return;
-      }
-
-      if (!deployedArmies[hexKey]) {
-        deployedArmies[hexKey] = {};
-      }
-
-      deployedArmies[hexKey][selectedPlayer] = (deployedArmies[hexKey][selectedPlayer] || 0) + 1;
-      deploymentRemaining[selectedPlayer]--;
-
-      log(`  ✓ DEPLOYED! Player ${selectedPlayer + 1} → ${hexKey}`, 'success');
-      log(`     Remaining: ${deploymentRemaining[selectedPlayer]}`, 'success');
+      const armies = armyMap[hexKey] || [];
       
-      updateUI();
-      drawAll();
+      if (armies.length === 0) {
+        armyDetails.innerHTML = '<p style="color: #ff6464;">No armies here</p>';
+      } else {
+        for (const army of armies) {
+          const section = document.createElement('div');
+          section.className = `team-section ${getPlayerTeam(army.player)}`;
+          
+          const h3 = document.createElement('h3');
+          h3.textContent = `Player ${army.player + 1}`;
+          section.appendChild(h3);
+          
+          const div = document.createElement('div');
+          div.className = 'army-info';
+          div.innerHTML = `
+            <span>Armies: ${army.count}</span>
+            <button class="move-btn" onclick="startMove('${hexKey}', ${army.player}, ${army.count})">Move</button>
+          `;
+          section.appendChild(div);
+          armyDetails.appendChild(section);
+        }
+      }
+
+      sidePanel.classList.add('active');
     }
 
-    window.selectPlayer = function(player) {
-      selectedPlayer = player;
-      log(`[SELECT] Player ${player + 1} (${getPlayerTeam(player)})`, 'success');
-      updateUI();
+    window.closeSidePanel = function() {
+      sidePanel.classList.remove('active');
+      currentHex = null;
     };
 
-    function updateUI() {
-      // Update buttons
-      const buttons = document.querySelectorAll('.player-btn');
-      buttons.forEach((btn, i) => {
-        btn.classList.toggle('active', i === selectedPlayer);
-      });
+    window.startMove = function(fromHex, player, count) {
+      const [col, row] = fromHex.split('_').map(Number);
+      const adjacent = getAdjacentHexes(col, row);
+      log(`[MOVE START] From ${fromHex}, Player ${player + 1}, Options: ${adjacent.join(', ')}`, 'info');
+      alert(`Movement demo:\n\nFrom: ${fromHex}\nPlayer ${player + 1}\nArmies: ${count}\n\nAdjacent hexagons:\n${adjacent.join(', ')}\n\nFull UI in main version.`);
+    };
 
-      // Update status
-      document.getElementById('selected').textContent = 
-        selectedPlayer === null ? 'None' : `Player ${selectedPlayer + 1}`;
-      document.getElementById('remaining').textContent = 
-        selectedPlayer === null ? '-' : deploymentRemaining[selectedPlayer];
+    window.endTurn = function() {
+      log('[END TURN] Turn completed', 'success');
+      alert('✓ Turn Complete!');
+    };
 
-      // Update end button
-      const allDeployed = deploymentRemaining.every(r => r === 0);
-      const endBtn = document.getElementById('endBtn');
-      if (allDeployed) {
-        endBtn.classList.add('ready');
-      } else {
-        endBtn.classList.remove('ready');
-      }
-    }
-
-    window.endDeployment = function() {
-      const allDeployed = deploymentRemaining.every(r => r === 0);
-      if (!allDeployed) {
-        alert('All players must deploy their armies!');
-        return;
-      }
-
-      log('[END DEPLOYMENT] Deployment complete!', 'success');
-      log(`Total deployed hexagons: ${Object.keys(deployedArmies).length}`, 'success');
-      alert('✓ Deployment Complete!');
+    window.resetOrders = function() {
+      log('[RESET] Orders cleared', 'info');
+      pendingMovements = [];
+      closeSidePanel();
     };
 
     async function loadData() {
@@ -528,18 +565,13 @@
         const text = await res.text();
         teamMap = parseGVizJSON(text);
         log(`✓ Data loaded: ${Object.keys(teamMap).length} hexagons`, 'success');
+        drawAll();
       } catch(e) {
         log(`✗ Error loading data: ${e.message}`, 'error');
       }
-
-      if (img.complete) {
-        initializeDeployment();
-      } else {
-        img.addEventListener('load', initializeDeployment);
-      }
     }
 
-    log('🟢 Deployment system initialized', 'success');
+    log('🟢 Movement system initialized', 'success');
     loadData();
     window.addEventListener('resize', drawAll);
   </script>
