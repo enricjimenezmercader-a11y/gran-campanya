@@ -2,95 +2,143 @@
 <html lang="ca">
 <head>
   <meta charset="UTF-8">
-  <title>Test 3: Deployment Logic</title>
+  <title>Test 4: SVG + Deployment</title>
   <style>
     body { background: #1a1208; color: #c9a84c; font-family: Arial; padding: 20px; }
-    button { background: #7a5c1e; color: #c9a84c; padding: 10px 20px; border: 2px solid #c9a84c; cursor: pointer; margin: 5px; }
+    .container { display: flex; gap: 20px; }
+    #svg { border: 2px solid #7a5c1e; }
+    .panel { min-width: 300px; }
+    button { background: #7a5c1e; color: #c9a84c; padding: 8px 15px; border: 2px solid #c9a84c; cursor: pointer; margin: 3px; }
     button:hover { background: #c9a84c; color: #1a1208; }
-    pre { background: #000; padding: 10px; color: #0f0; font-family: monospace; }
+    button.active { background: #c9a84c; color: #1a1208; }
+    pre { background: #000; padding: 10px; color: #0f0; font-family: monospace; font-size: 12px; max-height: 400px; overflow-y: auto; }
   </style>
 </head>
 <body>
-  <h1>Test 3: Deployment Logic</h1>
+  <h1>Test 4: SVG Hexagons + Deployment System</h1>
   
-  <div>
-    <h2>Players:</h2>
-    <button onclick="selectPlayer(0)">Player 1 (Blue)</button>
-    <button onclick="selectPlayer(1)">Player 2 (Blue)</button>
-    <button onclick="selectPlayer(2)">Player 3 (Blue)</button>
-    <button onclick="selectPlayer(3)">Player 4 (Red)</button>
-    <button onclick="selectPlayer(4)">Player 5 (Red)</button>
-    <button onclick="selectPlayer(5)">Player 6 (Red)</button>
-  </div>
+  <div class="container">
+    <div>
+      <h2>Map (click hexagons):</h2>
+      <svg id="svg" width="500" height="500" viewBox="0 0 500 500" style="border: 2px solid #7a5c1e;"></svg>
+    </div>
 
-  <div id="status" style="margin-top: 20px; padding: 10px; background: #2a1f0f; border: 2px solid #7a5c1e;">
-    <strong>Status:</strong> <span id="status-text">No player selected</span>
-  </div>
+    <div class="panel">
+      <h2>Deployment Panel</h2>
+      
+      <h3>Select Player:</h3>
+      <button onclick="selectPlayer(0)" id="btn-0">Player 1 (Blue)</button>
+      <button onclick="selectPlayer(1)" id="btn-1">Player 2 (Blue)</button>
+      <button onclick="selectPlayer(2)" id="btn-2">Player 3 (Blue)</button>
+      <button onclick="selectPlayer(3)" id="btn-3">Player 4 (Red)</button>
+      <button onclick="selectPlayer(4)" id="btn-4">Player 5 (Red)</button>
+      <button onclick="selectPlayer(5)" id="btn-5">Player 6 (Red)</button>
 
-  <div id="deployment-info" style="margin-top: 20px;">
-    <h2>Deployment Info:</h2>
-    <pre id="output"></pre>
+      <div style="margin-top: 20px; padding: 10px; background: #2a1f0f; border: 2px solid #7a5c1e;">
+        <strong>Selected:</strong> <span id="status">None</span>
+      </div>
+
+      <h3 style="margin-top: 20px;">Events Log:</h3>
+      <pre id="log"></pre>
+    </div>
   </div>
 
   <script>
+    const svg = document.getElementById('svg');
+    const logElement = document.getElementById('log');
     let selectedPlayer = null;
-    let deploymentRemaining = [9, 9, 9, 9, 9, 9]; // 9 armies per player
+    let deploymentRemaining = [9, 9, 9, 9, 9, 9];
     let deployedArmies = {};
+    let hexagons = {};
 
-    function updateDisplay() {
-      const output = document.getElementById('output');
-      const status = document.getElementById('status-text');
-      
-      status.textContent = selectedPlayer === null 
-        ? 'No player selected' 
-        : `Player ${selectedPlayer + 1} selected - ${deploymentRemaining[selectedPlayer]} armies remaining`;
-      
-      output.textContent = `Selected: ${selectedPlayer === null ? 'None' : 'Player ' + (selectedPlayer + 1)}\n`;
-      output.textContent += `Remaining: ${JSON.stringify(deploymentRemaining)}\n\n`;
-      output.textContent += `Deployed: ${JSON.stringify(deployedArmies, null, 2)}`;
+    function log(msg) {
+      console.log(msg);
+      logElement.textContent += msg + '\n';
+      logElement.scrollTop = logElement.scrollHeight;
     }
 
-    function selectPlayer(player) {
-      selectedPlayer = player;
-      console.log(`Player ${player + 1} selected`);
-      updateDisplay();
+    function createHexagon(col, row, cx, cy, r) {
+      const hexId = `${col}_${row}`;
+      const pts = [];
+      for (let i = 0; i < 6; i++) {
+        const angle = Math.PI / 180 * (60 * i);
+        pts.push(`${cx + r * Math.cos(angle)},${cy + r * Math.sin(angle)}`);
+      }
+      
+      const polygon = document.createElementNS('http://www.w3.org/2000/svg', 'polygon');
+      polygon.setAttribute('points', pts.join(' '));
+      
+      const team = (col + row) % 2 === 0 ? 'blue' : 'red';
+      polygon.setAttribute('fill', team === 'blue' ? 'rgba(60,120,220,0.22)' : 'rgba(210,50,50,0.22)');
+      polygon.setAttribute('stroke', team === 'blue' ? '#5a96ff' : '#ff4a4a');
+      polygon.setAttribute('stroke-width', '2');
+      polygon.style.cursor = 'pointer';
+      
+      polygon.addEventListener('click', function(e) {
+        e.stopPropagation();
+        log(`[CLICK] Hexagon ${hexId} clicked`);
+        deploymentHexClick(hexId, team);
+      });
+      
+      svg.appendChild(polygon);
+      hexagons[hexId] = { team, col, row };
     }
 
-    window.deployToHex = function(hexId) {
-      console.log(`deployToHex called: hex=${hexId}, player=${selectedPlayer}`);
+    function deploymentHexClick(hexId, hexTeam) {
+      log(`[DEPLOY] Attempting deployment to ${hexId}`);
       
       if (selectedPlayer === null) {
-        alert('No player selected!');
+        log(`  ✗ No player selected`);
         return;
       }
 
       if (deploymentRemaining[selectedPlayer] <= 0) {
-        alert(`Player ${selectedPlayer + 1} has no armies left!`);
+        log(`  ✗ Player ${selectedPlayer + 1} has no armies left`);
+        return;
+      }
+
+      const playerTeam = selectedPlayer < 3 ? 'blue' : 'red';
+      if (playerTeam !== hexTeam) {
+        log(`  ✗ Team mismatch: player=${playerTeam}, hex=${hexTeam}`);
         return;
       }
 
       if (!deployedArmies[hexId]) {
-        deployedArmies[hexId] = [];
+        deployedArmies[hexId] = {};
       }
 
-      deployedArmies[hexId].push(selectedPlayer);
+      deployedArmies[hexId][selectedPlayer] = (deployedArmies[hexId][selectedPlayer] || 0) + 1;
       deploymentRemaining[selectedPlayer]--;
 
-      console.log(`✓ Deployed! Hex=${hexId}, Player=${selectedPlayer}, Remaining=${deploymentRemaining[selectedPlayer]}`);
-      updateDisplay();
+      log(`  ✓ SUCCESS! Player ${selectedPlayer + 1} deployed to ${hexId}`);
+      log(`     Remaining: ${deploymentRemaining[selectedPlayer]}`);
+    }
+
+    window.selectPlayer = function(player) {
+      selectedPlayer = player;
+      log(`[SELECT] Player ${player + 1} selected`);
+      
+      // Update UI
+      for (let i = 0; i < 6; i++) {
+        document.getElementById(`btn-${i}`).classList.toggle('active', i === player);
+      }
+      document.getElementById('status').textContent = `Player ${player + 1}`;
     };
 
-    // Add test buttons
-    document.body.innerHTML += `
-      <div style="margin-top: 20px;">
-        <h2>Test Deployment:</h2>
-        <button onclick="deployToHex('hex_0_0')">Deploy to Hex 0</button>
-        <button onclick="deployToHex('hex_1_0')">Deploy to Hex 1</button>
-        <button onclick="deployToHex('hex_2_0')">Deploy to Hex 2</button>
-      </div>
-    `;
+    // Create hex grid
+    const r = 40;
+    const hexH = Math.sqrt(3) * r;
+    const vr = hexH / 2;
 
-    updateDisplay();
+    for (let col = 0; col < 5; col++) {
+      const cx = 50 + col * 1.5 * r;
+      for (let row = 0; row < 4; row++) {
+        const cy = 50 + row * hexH + (col % 2 === 1 ? vr : 0);
+        createHexagon(col, row, cx, cy, r);
+      }
+    }
+
+    log('✓ System ready. Select a player and click hexagons.');
   </script>
 </body>
 </html>
