@@ -289,6 +289,7 @@
 
     #destination-overlay {
       z-index: 600;
+      pointer-events: auto;
     }
 
     #hex-label-overlay {
@@ -820,7 +821,7 @@
 </head>
 <body>
   <div class="title-container">
-    <h1>Gran Campanya<span class="version-number">v6</span></h1>
+    <h1>Gran Campanya<span class="version-number">v7</span></h1>
   </div>
 
   <div class="hex-count-display">
@@ -1187,6 +1188,9 @@
       arrowOverlay.innerHTML = '';
       hexLabelOverlay.innerHTML = '';
       armyOverlay.innerHTML = '';
+      
+      // CRITICAL: Clear destination SVG completely on every redraw
+      destinationSvg.innerHTML = '';
 
       const rW = W / (2 + 1.5 * (COLS - 1));
       const rH = H / (ROWS * Math.sqrt(3) + 1);
@@ -1319,7 +1323,7 @@
       if (gamePhase === 'movement') {
         detectBattles();
         
-        // CRITICALLY IMPORTANT: Only draw destination highlights if we're actively selecting a destination
+        // ONLY draw destination highlights if actively selecting a destination
         if (activeDestinationHexes.length > 0 && currentHex !== null) {
           for (const hexKey of activeDestinationHexes) {
             if (hexPositions[hexKey]) {
@@ -1656,12 +1660,14 @@
 
       statusDiv.innerHTML = '<div class="status-message status-success">Moviment ordenat!</div>';
       
-      // CRITICAL FIX: Clear highlights immediately after ordering
+      // CRITICAL FIX v7: Clear everything IMMEDIATELY
       activeDestinationHexes = [];
+      currentHex = null;
       
       setTimeout(() => {
         cancelMove(player, fromHex);
-        showHexPanel(...fromHex.split('_').map(Number));
+        // Don't reopen panel - just redraw cleanly
+        drawAll();
       }, 800);
     };
 
@@ -1671,6 +1677,7 @@
         moveForm.classList.remove('active');
       }
       activeDestinationHexes = [];
+      currentHex = null;
       drawAll();
     };
 
