@@ -1,0 +1,473 @@
+<!DOCTYPE html>
+<html lang="ca">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Gran Campanya - WWII Strategic Battle</title>
+  <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;700&family=Roboto:wght@400;700&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background-color: #0a0a0a;
+      background-image: 
+        linear-gradient(45deg, rgba(139,69,19,0.1) 25%, transparent 25%),
+        linear-gradient(-45deg, rgba(139,69,19,0.1) 25%, transparent 25%),
+        linear-gradient(45deg, transparent 75%, rgba(139,69,19,0.1) 75%),
+        linear-gradient(-45deg, transparent 75%, rgba(139,69,19,0.1) 75%);
+      background-size: 60px 60px;
+      background-position: 0 0, 0 30px, 30px -30px, -30px 0px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      font-family: 'Roboto', sans-serif;
+      overflow: hidden;
+      position: relative;
+    }
+
+    body::before {
+      content: '';
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: 
+        radial-gradient(ellipse at 20% 50%, rgba(255,165,0,0.1) 0%, transparent 50%),
+        radial-gradient(ellipse at 80% 80%, rgba(220,20,60,0.08) 0%, transparent 50%);
+      pointer-events: none;
+      z-index: 1;
+    }
+
+    .content {
+      position: relative;
+      z-index: 10;
+      text-align: center;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 2.5rem;
+    }
+
+    .header {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 1rem;
+      margin-top: 2rem;
+    }
+
+    h1 {
+      font-family: 'Oswald', sans-serif;
+      font-size: clamp(2.5rem, 10vw, 5rem);
+      color: #ffcc00;
+      letter-spacing: 0.15em;
+      font-weight: 700;
+      text-shadow: 
+        0 0 20px rgba(255,204,0,0.8),
+        0 0 40px rgba(255,100,0,0.4),
+        3px 3px 0 #000,
+        6px 6px 0 rgba(0,0,0,0.5);
+      margin: 0;
+      animation: militaryPulse 3s ease-in-out infinite;
+      text-transform: uppercase;
+      letter-spacing: 0.2em;
+    }
+
+    @keyframes militaryPulse {
+      0%, 100% { 
+        text-shadow: 
+          0 0 20px rgba(255,204,0,0.8),
+          0 0 40px rgba(255,100,0,0.4),
+          3px 3px 0 #000,
+          6px 6px 0 rgba(0,0,0,0.5);
+      }
+      50% { 
+        text-shadow: 
+          0 0 30px rgba(255,204,0,1),
+          0 0 60px rgba(255,100,0,0.6),
+          3px 3px 0 #000,
+          6px 6px 0 rgba(0,0,0,0.7);
+      }
+    }
+
+    .subtitle {
+      font-family: 'Oswald', sans-serif;
+      font-size: 1.4rem;
+      color: #cc3333;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-shadow: 2px 2px 4px #000;
+      margin: 0;
+      text-transform: uppercase;
+      animation: fadeInScale 0.8s ease-out;
+    }
+
+    @keyframes fadeInScale {
+      from {
+        opacity: 0;
+        transform: scale(0.8);
+      }
+      to {
+        opacity: 1;
+        transform: scale(1);
+      }
+    }
+
+    .tagline {
+      font-family: 'Roboto', sans-serif;
+      font-size: 1rem;
+      color: #888;
+      font-style: italic;
+      letter-spacing: 0.05em;
+      margin-top: 0.5rem;
+    }
+
+    .divider {
+      width: 150px;
+      height: 3px;
+      background: linear-gradient(90deg, transparent, #ffcc00, #cc3333, #ffcc00, transparent);
+      margin: 1rem 0;
+      box-shadow: 0 0 10px rgba(255,204,0,0.5);
+    }
+
+    .map-marker {
+      display: inline-block;
+      width: 30px;
+      height: 30px;
+      background: radial-gradient(circle at 30% 30%, #ffcc00, #ff8800);
+      border-radius: 50%;
+      margin: 0 0.5rem;
+      box-shadow: 0 0 15px rgba(255,204,0,0.7);
+      animation: pulse 2s ease-in-out infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% {
+        box-shadow: 0 0 15px rgba(255,204,0,0.7);
+        transform: scale(1);
+      }
+      50% {
+        box-shadow: 0 0 25px rgba(255,204,0,1);
+        transform: scale(1.1);
+      }
+    }
+
+    .menu-container {
+      display: flex;
+      flex-direction: column;
+      gap: 1.2rem;
+      min-width: 320px;
+      padding: 2rem;
+      background: rgba(0,0,0,0.6);
+      border: 3px solid #ffcc00;
+      border-radius: 2px;
+      box-shadow: 
+        0 0 20px rgba(255,204,0,0.3),
+        inset 0 0 20px rgba(255,204,0,0.1);
+    }
+
+    .menu-btn {
+      padding: 1.2rem 2.5rem;
+      font-family: 'Oswald', sans-serif;
+      font-size: 1.2rem;
+      font-weight: 700;
+      background: linear-gradient(135deg, #cc3333 0%, #990000 100%);
+      color: #ffcc00;
+      border: 2px solid #ffcc00;
+      border-radius: 0;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      text-decoration: none;
+      display: inline-block;
+      text-align: center;
+      box-shadow: 
+        0 6px 0 #000,
+        0 8px 15px rgba(0,0,0,0.7),
+        inset 0 1px 0 rgba(255,255,255,0.2);
+      position: relative;
+      overflow: hidden;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+    }
+
+    .menu-btn::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: -100%;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(255,204,0,0.3), transparent);
+      transition: left 0.5s ease;
+      z-index: 1;
+    }
+
+    .menu-btn::after {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 2px;
+      background: rgba(255,255,255,0.5);
+      z-index: 0;
+    }
+
+    .menu-btn:hover::before {
+      left: 100%;
+    }
+
+    .menu-btn:hover {
+      background: linear-gradient(135deg, #ffcc00 0%, #ff8800 100%);
+      color: #000;
+      transform: translateY(-3px);
+      box-shadow: 
+        0 9px 0 #000,
+        0 12px 20px rgba(0,0,0,0.9),
+        inset 0 1px 0 rgba(255,255,255,0.3);
+    }
+
+    .menu-btn:active {
+      transform: translateY(-1px);
+      box-shadow: 
+        0 4px 0 #000,
+        0 6px 10px rgba(0,0,0,0.7),
+        inset 0 1px 0 rgba(255,255,255,0.2);
+    }
+
+    .menu-btn.primary {
+      font-size: 1.4rem;
+      padding: 1.5rem 3.5rem;
+      background: linear-gradient(135deg, #ffcc00 0%, #ff8800 100%);
+      color: #000;
+      border-color: #ffff00;
+      text-shadow: 1px 1px 0 rgba(0,0,0,0.3);
+    }
+
+    .menu-btn.primary:hover {
+      background: linear-gradient(135deg, #ffff00 0%, #ffaa00 100%);
+      color: #000;
+    }
+
+    .menu-btn.secondary {
+      font-size: 1rem;
+      padding: 1rem 2rem;
+      background: linear-gradient(135deg, #333333 0%, #1a1a1a 100%);
+      color: #ffcc00;
+      border-color: #666666;
+    }
+
+    .menu-btn.secondary:hover {
+      background: linear-gradient(135deg, #555555 0%, #333333 100%);
+      border-color: #ffcc00;
+      color: #ffff00;
+    }
+
+    .stats-container {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+      gap: 1.5rem;
+      margin-top: 2rem;
+      width: 100%;
+      max-width: 600px;
+    }
+
+    .stat-box {
+      background: linear-gradient(135deg, rgba(204,51,51,0.2) 0%, rgba(0,0,0,0.4) 100%);
+      border: 2px solid #ffcc00;
+      border-radius: 2px;
+      padding: 1.5rem 1rem;
+      box-shadow: 
+        0 0 15px rgba(255,204,0,0.2),
+        inset 0 0 10px rgba(255,204,0,0.1);
+    }
+
+    .stat-label {
+      font-family: 'Oswald', sans-serif;
+      font-size: 0.9rem;
+      color: #888;
+      margin-bottom: 0.8rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      font-weight: 700;
+    }
+
+    .stat-value {
+      font-size: 2rem;
+      color: #ffcc00;
+      font-weight: 700;
+      text-shadow: 2px 2px 4px #000;
+    }
+
+    .footer {
+      position: fixed;
+      bottom: 20px;
+      width: 100%;
+      text-align: center;
+      font-family: 'Oswald', sans-serif;
+      font-size: 0.85rem;
+      color: #666;
+      z-index: 5;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .version-badge {
+      font-size: 0.75rem;
+      opacity: 0.6;
+      margin-top: 0.5rem;
+    }
+
+    .military-stripe {
+      position: fixed;
+      width: 100%;
+      height: 4px;
+      background: linear-gradient(90deg, #ffcc00, #cc3333, #ffcc00);
+      top: 0;
+      left: 0;
+      z-index: 20;
+      box-shadow: 0 0 20px rgba(255,204,0,0.5);
+    }
+
+    .military-stripe::after {
+      content: '';
+      position: absolute;
+      width: 100%;
+      height: 4px;
+      background: linear-gradient(90deg, #ffcc00, #cc3333, #ffcc00);
+      bottom: -8px;
+      box-shadow: 0 0 15px rgba(255,204,0,0.3);
+    }
+
+    .emblems {
+      display: flex;
+      gap: 2rem;
+      justify-content: center;
+      margin-top: 1.5rem;
+      flex-wrap: wrap;
+    }
+
+    .emblem {
+      width: 60px;
+      height: 60px;
+      background: linear-gradient(135deg, #ffcc00 0%, #ff8800 100%);
+      border: 2px solid #cc3333;
+      border-radius: 2px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 2rem;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.5);
+      animation: bounce 2s ease-in-out infinite;
+    }
+
+    .emblem:nth-child(2) {
+      animation-delay: 0.2s;
+    }
+
+    @keyframes bounce {
+      0%, 100% {
+        transform: translateY(0);
+      }
+      50% {
+        transform: translateY(-10px);
+      }
+    }
+
+    @media (max-width: 768px) {
+      h1 {
+        font-size: clamp(1.8rem, 8vw, 3rem);
+      }
+
+      .subtitle {
+        font-size: 1rem;
+      }
+
+      .menu-container {
+        min-width: 280px;
+        padding: 1.5rem;
+      }
+
+      .menu-btn {
+        padding: 1rem 1.8rem;
+        font-size: 1rem;
+      }
+
+      .menu-btn.primary {
+        font-size: 1.2rem;
+        padding: 1.2rem 2.5rem;
+      }
+
+      .stats-container {
+        gap: 1rem;
+      }
+
+      .stat-box {
+        padding: 1rem 0.8rem;
+      }
+
+      .stat-value {
+        font-size: 1.6rem;
+      }
+
+      .emblems {
+        gap: 1rem;
+      }
+
+      .emblem {
+        width: 50px;
+        height: 50px;
+        font-size: 1.6rem;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="military-stripe"></div>
+
+  <div class="content">
+    <div class="header">
+      <h1>Gran Campanya</h1>
+      <div class="divider"></div>
+      <div style="display: flex; align-items: center; justify-content: center;">
+        <div class="map-marker"></div>
+        <p class="subtitle">WWII Strategic Battle</p>
+        <div class="map-marker"></div>
+      </div>
+      <p class="tagline">⚔️ Command Your Forces • Conquer the Territory ⚔️</p>
+    </div>
+
+    <div class="emblems">
+      <div class="emblem">🛖</div>
+      <div class="emblem">⚔️</div>
+      <div class="emblem">🚩</div>
+    </div>
+
+    <div class="menu-container">
+      <a href="ordres.html" class="menu-btn primary">▶ COMMENCE OPERATION</a>
+      <a href="desplegament.html" class="menu-btn secondary">🎖️ Desplegament</a>
+      <a href="batalles.html" class="menu-btn secondary">⚔️ Batalles</a>
+    </div>
+
+    <div class="stats-container">
+      <div class="stat-box">
+        <div class="stat-label">Territories</div>
+        <div class="stat-value">54</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-label">Factions</div>
+        <div class="stat-value">2</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-label">Commanders</div>
+        <div class="stat-value">6</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="footer">
+    <p>© 2026 •*
+
