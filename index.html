@@ -136,9 +136,16 @@
       color: #c9a84c;
     }
 
-    .btn-primary:hover {
+    .btn-primary:hover:not(:disabled) {
       background: #c9a84c;
       color: #1a1208;
+    }
+
+    .btn-primary:disabled {
+      background: #5a5a5a;
+      color: #8a8a8a;
+      border-color: #8a8a8a;
+      cursor: not-allowed;
     }
 
     .btn-secondary {
@@ -622,7 +629,7 @@
         </div>
       </div>
       <div class="action-buttons">
-        <button class="btn-primary" onclick="endTurn()">Finalitzar moviment</button>
+        <button class="btn-primary" id="endTurnBtn" onclick="endTurn()">Finalitzar moviment</button>
         <button class="btn-secondary" onclick="resetOrders()">Reseteja ordres</button>
       </div>
       <div id="battlesDisplay"></div>
@@ -650,6 +657,7 @@
     const hexName = document.getElementById('hexName');
     const armyDetails = document.getElementById('armyDetails');
     const battlesDisplay = document.getElementById('battlesDisplay');
+    const endTurnBtn = document.getElementById('endTurnBtn');
 
     const COLS = 12, ROWS = 5;
     const waterHexes = new Set(['2_1','3_1','4_0','4_1','5_0','6_0']);
@@ -674,7 +682,8 @@
     let activeDestinationHexes = [];
     let hexRadius = 50;
     let battles = [];
-    let battleResults = {}; // Store battle resolution results
+    let battleResults = {};
+    let resolvedBattles = new Set();
 
     function getTeamTextColor(player) {
       return player < 3 ? '#5a96ff' : '#ff4a4a';
@@ -775,6 +784,9 @@
       const hexPairs = {};
       
       for (const movement of pendingMovements) {
+        // Skip movements with zero quantity
+        if (movement.quantity <= 0) continue;
+
         const [fromCol, fromRow] = movement.fromHex.split('_').map(Number);
         const [toCol, toRow] = movement.toHex.split('_').map(Number);
         
@@ -800,8 +812,8 @@
         const pair = hexPairs[pairKey];
         const [hex1, hex2] = [pair.hex1, pair.hex2];
         
-        const forwardMovements = pair.movements.filter(m => m.fromHex === hex1 && m.toHex === hex2);
-        const backwardMovements = pair.movements.filter(m => m.fromHex === hex2 && m.toHex === hex1);
+        const forwardMovements = pair.movements.filter(m => m.fromHex === hex1 && m.toHex === hex2 && m.quantity > 0);
+        const backwardMovements = pair.movements.filter(m => m.fromHex === hex2 && m.toHex === hex1 && m.quantity > 0);
         
         if (forwardMovements.length > 0 && backwardMovements.length > 0) {
           battles.push({
@@ -811,6 +823,26 @@
             movements: pair.movements
           });
         }
+      }
+    }
+
+    function updateEndTurnButtonState() {
+      detectBattles();
+      
+      // Check if all battles are resolved
+      let allResolved = true;
+      for (const battle of battles) {
+        if (!resolvedBattles.has(battle.id)) {
+          allResolved = false;
+          break;
+        }
+      }
+      
+      // If there are battles and not all resolved, disable button
+      if (battles.length > 0 && !allResolved) {
+        endTurnBtn.disabled = true;
+      } else {
+        endTurnBtn.disabled = false;
       }
     }
 
@@ -919,32 +951,29 @@
       if (!btn.classList.contains('valid')) return;
 
       const players = document.querySelectorAll(`[data-battle-id="${battleId}"][data-row-type="player"]`);
-      const battleResults = {};
+      const battleResultData = {};
 
       for (const playerRow of players) {
         const player = parseInt(playerRow.getAttribute('data-player'));
         const avancen = parseInt(document.getElementById(`${battleId}-${player}-avancen`).value) || 0;
         const retirades = parseInt(document.getElementById(`${battleId}-${player}-retirades`).value) || 0;
 
-        battleResults[player] = {
+        battleResultData[player] = {
           avancen: avancen,
           retirades: retirades
         };
       }
 
-      // Find the battle
       const battle = battles.find(b => b.id === battleId);
       if (!battle) return;
 
-      // Update movements with new advancing quantities
-      for (const player in battleResults) {
+      for (const player in battleResultData) {
         const playerNum = parseInt(player);
-        const data = battleResults[player];
+        const data = battleResultData[player];
         
         for (let i = 0; i < pendingMovements.length; i++) {
           const movement = pendingMovements[i];
           
-          // Check if this movement is in this battle
           const isBattleMovement = battle.movements.some(m => 
             m.fromHex === movement.fromHex && 
             m.toHex === movement.toHex && 
@@ -952,10 +981,8 @@
           );
 
           if (isBattleMovement && movement.player === playerNum) {
-            // Update to advancing quantity
             pendingMovements[i].quantity = data.avancen;
             
-            // Add retired armies back to origin
             if (data.retirades > 0) {
               if (!armyMap[movement.fromHex]) {
                 armyMap[movement.fromHex] = [];
@@ -971,10 +998,9 @@
         }
       }
 
-      battleResults[battleId] = battleResults;
-
-      // Redraw
+      resolvedBattles.add(battleId);
       drawAll();
+      updateEndTurnButtonState();
     };
 
     async function addMovementToSheet(fromHex, toHex, player, quantity) {
@@ -998,6 +1024,8 @@
     }
 
     function updateLocalArmies(fromHex, toHex, player, quantity) {
+      if (quantity <= 0) return;
+
       const fromArmies = armyMap[fromHex];
       const armyIndex = fromArmies.findIndex(a => a.player === player);
       if (armyIndex !== -1) {
@@ -1125,23 +1153,25 @@
         return;
       }
 
+      // Close side panel first
+      closeSidePanel();
+
       console.log('Executing movements:', pendingMovements);
 
       for (const movement of pendingMovements) {
-        await addMovementToSheet(movement.fromHex, movement.toHex, movement.player, movement.quantity);
-        updateLocalArmies(movement.fromHex, movement.toHex, movement.player, movement.quantity);
+        if (movement.quantity > 0) {
+          await addMovementToSheet(movement.fromHex, movement.toHex, movement.player, movement.quantity);
+          updateLocalArmies(movement.fromHex, movement.toHex, movement.player, movement.quantity);
+        }
       }
 
       pendingMovements = [];
       movedQuantities = {};
       activeDestinationHexes = [];
       battleResults = {};
+      resolvedBattles = new Set();
 
-      if (currentHex) {
-        showHexPanel(...currentHex.split('_').map(Number));
-      }
       drawAll();
-
       alert('Torn completat!');
     };
 
@@ -1159,6 +1189,7 @@
       movedQuantities = {};
       activeDestinationHexes = [];
       battleResults = {};
+      resolvedBattles = new Set();
 
       if (currentHex) {
         showHexPanel(...currentHex.split('_').map(Number));
@@ -1531,6 +1562,9 @@
       }
 
       for (const movement of pendingMovements) {
+        // Skip movements with zero or negative quantity
+        if (movement.quantity <= 0) continue;
+
         const arrowSize = (hexRadius * 2 * 0.75) * 0.75;
         const arrowPos = getArrowPosition(movement.fromHex, movement.toHex, arrowSize);
         const arrowRotation = getArrowRotation(movement.fromHex, movement.toHex);
@@ -1566,6 +1600,7 @@
       }
 
       displayBattles();
+      updateEndTurnButtonState();
 
       document.getElementById('blue-count').textContent = blueCount;
       document.getElementById('red-count').textContent  = redCount;
