@@ -274,7 +274,7 @@
       height: auto;
     }
 
-    #ownership-overlay, #hex-overlay, #army-overlay, #explosion-overlay, #hex-label-overlay, #destination-overlay, #arrow-overlay, #battle-overlay, #deployment-overlay {
+    #ownership-overlay, #hex-overlay, #army-overlay, #explosion-overlay, #hex-label-overlay, #destination-overlay, #arrow-overlay, #battle-overlay {
       position: absolute;
       top: 0;
       left: 0;
@@ -285,6 +285,7 @@
 
     #ownership-overlay {
       pointer-events: auto;
+      z-index: 100;
     }
 
     #destination-overlay {
@@ -304,26 +305,8 @@
       z-index: 650;
     }
 
-    #deployment-overlay {
-      z-index: 500;
-      pointer-events: none;
-    }
-
     #army-overlay {
       z-index: 400;
-    }
-
-    .deployment-highlight {
-      fill: rgba(150, 200, 255, 0.4);
-      stroke: #90d4ff;
-      stroke-width: 3;
-      pointer-events: none;
-      cursor: pointer;
-    }
-
-    .deployment-highlight:hover {
-      fill: rgba(150, 200, 255, 0.6);
-      filter: drop-shadow(0 0 8px #90d4ff);
     }
 
     .destination-highlight {
@@ -818,34 +801,11 @@
       color: #ff6464;
       border: 1px solid #ff6464;
     }
-
-    .debug-console {
-      position: fixed;
-      bottom: 10px;
-      right: 10px;
-      width: 350px;
-      max-height: 250px;
-      background: #000;
-      border: 2px solid #0f0;
-      color: #0f0;
-      font-family: monospace;
-      font-size: 11px;
-      padding: 8px;
-      overflow-y: auto;
-      z-index: 9999;
-      display: block;
-      box-shadow: 0 0 10px rgba(0,255,0,0.3);
-    }
-
-    .debug-console div {
-      margin: 2px 0;
-      line-height: 1.3;
-    }
   </style>
 </head>
 <body>
   <div class="title-container">
-    <h1>Gran Campanya<span class="version-number">v11-DEBUG</span></h1>
+    <h1>Gran Campanya<span class="version-number">v12-FIXED</span></h1>
   </div>
 
   <div class="hex-count-display">
@@ -871,7 +831,6 @@
             <img id="mapImg" src="map.jpg">
             <svg id="ownership-overlay"></svg>
             <svg id="hex-overlay"></svg>
-            <svg id="deployment-overlay"></svg>
             <div id="army-overlay"></div>
             <div id="explosion-overlay"></div>
             <div id="battle-overlay"></div>
@@ -895,32 +854,11 @@
     <button class="close-btn" onclick="closeSidePanel()">Close</button>
   </div>
 
-  <div class="debug-console" id="debugConsole"></div>
-
   <script>
-    // DEBUG SYSTEM
-    let debugLogs = [];
-    const debugConsole = document.getElementById('debugConsole');
-
-    function debug(msg) {
-      const timestamp = new Date().toLocaleTimeString();
-      debugLogs.push(`[${timestamp}] ${msg}`);
-      if (debugLogs.length > 20) debugLogs.shift();
-      updateDebugDisplay();
-    }
-
-    function updateDebugDisplay() {
-      debugConsole.innerHTML = debugLogs.map(l => `<div>${l}</div>`).join('');
-      debugConsole.scrollTop = debugConsole.scrollHeight;
-    }
-
-    debug('🟢 Game initialized');
-
     const img    = document.getElementById('mapImg');
     const mapWrapper = document.getElementById('mapWrapper');
     const svgOwn = document.getElementById('ownership-overlay');
     const svgHex = document.getElementById('hex-overlay');
-    const deploymentSvg = document.getElementById('deployment-overlay');
     const destinationSvg = document.getElementById('destination-overlay');
     const hexLabelOverlay = document.getElementById('hex-label-overlay');
     const explosionOverlay = document.getElementById('explosion-overlay');
@@ -1065,7 +1003,6 @@
     }
 
     function initializeDeployment() {
-      debug('Initializing deployment...');
       const teamCounts = { blue: 0, red: 0 };
       teamHexagons = { blue: [], red: [] };
 
@@ -1082,8 +1019,6 @@
         }
       }
 
-      debug(`Blue: ${teamCounts.blue} hex, Red: ${teamCounts.red} hex`);
-
       deploymentArmies = {};
       deploymentRemaining = {};
 
@@ -1093,7 +1028,6 @@
         const perPlayer = Math.floor(teamTotal / 3);
         deploymentArmies[i] = perPlayer;
         deploymentRemaining[i] = perPlayer;
-        debug(`Player ${i+1} gets ${perPlayer} hexes to deploy`);
       }
 
       deployedArmies = {};
@@ -1147,7 +1081,6 @@
     }
 
     function selectDeploymentPlayer(player) {
-      debug(`Player ${player+1} selected`);
       selectedDeploymentPlayer = player;
       renderDeploymentPanel();
       drawAll();
@@ -1188,37 +1121,19 @@
       deploymentPanel.classList.add('hidden');
       selectedDeploymentPlayer = null;
       deployedArmies = {};
-      debug('🟡 Deployment phase complete - Moving to movement phase');
       drawAll();
     };
 
     function deploymentHexClick(col, row) {
-      debug(`🔵 CLICK on ${col}_${row}`);
-
-      if (gamePhase !== 'deployment') {
-        debug(`  ✗ Not deployment phase (phase=${gamePhase})`);
-        return;
-      }
-      
-      if (selectedDeploymentPlayer === null) {
-        debug(`  ✗ No player selected`);
-        return;
-      }
-      
-      if (deploymentRemaining[selectedDeploymentPlayer] <= 0) {
-        debug(`  ✗ Player ${selectedDeploymentPlayer+1} has no armies left`);
-        return;
-      }
+      if (gamePhase !== 'deployment' || selectedDeploymentPlayer === null) return;
+      if (deploymentRemaining[selectedDeploymentPlayer] <= 0) return;
 
       const hexKey = `${col}_${row}`;
       const playerTeam = getPlayerTeam(selectedDeploymentPlayer);
       const hexTeam = teamOf(col, row);
 
-      debug(`  Team check: Player=${playerTeam}, Hex=${hexTeam}`);
-
       if ((playerTeam === 'blue' && hexTeam !== 'blau') || 
           (playerTeam === 'red' && hexTeam !== 'vermell')) {
-        debug(`  ✗ Team mismatch!`);
         return;
       }
 
@@ -1229,8 +1144,6 @@
       deployedArmies[hexKey][selectedDeploymentPlayer] = 
         (deployedArmies[hexKey][selectedDeploymentPlayer] || 0) + 1;
       deploymentRemaining[selectedDeploymentPlayer]--;
-
-      debug(`  ✓ Deployed! Remaining: ${deploymentRemaining[selectedDeploymentPlayer]}`);
 
       renderDeploymentPanel();
       drawAll();
@@ -1246,11 +1159,6 @@
         s.setAttribute('height', H);
         s.innerHTML = '';
       });
-
-      deploymentSvg.setAttribute('viewBox', `0 0 ${W} ${H}`);
-      deploymentSvg.setAttribute('width', W);
-      deploymentSvg.setAttribute('height', H);
-      deploymentSvg.innerHTML = '';
 
       destinationSvg.setAttribute('viewBox', `0 0 ${W} ${H}`);
       destinationSvg.setAttribute('width', W);
@@ -1313,17 +1221,6 @@
           poly.setAttribute('stroke-width', '2.5');
           poly.setAttribute('pointer-events', 'none');
           svgHex.appendChild(poly);
-
-          if (gamePhase === 'deployment' && selectedDeploymentPlayer !== null) {
-            const playerTeam = getPlayerTeam(selectedDeploymentPlayer);
-            if ((playerTeam === 'blue' && team === 'blau') || 
-                (playerTeam === 'red' && team === 'vermell')) {
-              const highlightPoly = document.createElementNS('http://www.w3.org/2000/svg', 'polygon');
-              highlightPoly.setAttribute('points', pts);
-              highlightPoly.setAttribute('class', 'deployment-highlight');
-              deploymentSvg.appendChild(highlightPoly);
-            }
-          }
 
           const hexKey = `${col}_${row}`;
           const armies = armyMap[hexKey];
@@ -2046,7 +1943,6 @@
         teamMap = parseGVizJSON(text);
       } catch(e) {
         console.error('Error loading sheet:', e);
-        debug(`❌ Error loading sheet: ${e}`);
       }
       if (img.complete) {
         initializeDeployment();
