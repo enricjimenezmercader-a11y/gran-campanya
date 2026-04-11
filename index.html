@@ -127,5 +127,421 @@
     }
 
     .map-section {
-      display*
-
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 15px;
+    }
+
+    .map-frame {
+      border: 7.5px solid #7a5c1e;
+      box-shadow: 0 0 30px rgba(201,168,76,0.25);
+      position: relative;
+      display: inline-block;
+      background: #1a1208;
+    }
+
+    .map-wrapper {
+      position: relative;
+      display: inline-block;
+      line-height: 0;
+    }
+
+    .map-wrapper img {
+      display: block;
+      max-width: 60vw;
+      height: auto;
+    }
+
+    svg {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+    }
+
+    .log {
+      width: 300px;
+      background: #000;
+      border: 2px solid #0f0;
+      padding: 15px;
+      color: #0f0;
+      font-family: monospace;
+      font-size: 10px;
+      max-height: 75vh;
+      overflow-y: auto;
+      border-radius: 3px;
+    }
+
+    .log-entry {
+      margin: 2px 0;
+      line-height: 1.3;
+    }
+
+    .log-success { color: #0f0; }
+    .log-error { color: #ff4444; }
+    .log-info { color: #00ffff; }
+
+    .end-btn {
+      margin-top: 15px;
+      padding: 10px;
+      width: 100%;
+      background: #5a5a5a;
+      border: 2px solid #8a8a8a;
+      color: #8a8a8a;
+      cursor: not-allowed;
+      border-radius: 3px;
+      font-weight: bold;
+      transition: all 0.2s;
+    }
+
+    .end-btn.ready {
+      background: #7a5c1e;
+      border-color: #c9a84c;
+      color: #c9a84c;
+      cursor: pointer;
+    }
+
+    .end-btn.ready:hover {
+      background: #c9a84c;
+      color: #1a1208;
+    }
+  </style>
+</head>
+<body>
+  <h1>🎮 Gran Campanya - DEPLOYMENT PHASE</h1>
+  <div class="version">Deployment Only | Real Data & Map</div>
+
+  <div class="container">
+    <!-- Deployment Panel -->
+    <div class="panel">
+      <h2>📋 Desplegament</h2>
+      
+      <div class="team-section blue">
+        <h3>🔵 Equip Blau</h3>
+        <button class="player-btn" onclick="selectPlayer(0)">Jugador 1</button>
+        <button class="player-btn" onclick="selectPlayer(1)">Jugador 2</button>
+        <button class="player-btn" onclick="selectPlayer(2)">Jugador 3</button>
+      </div>
+
+      <div class="team-section red">
+        <h3>🔴 Equip Vermell</h3>
+        <button class="player-btn" onclick="selectPlayer(3)">Jugador 4</button>
+        <button class="player-btn" onclick="selectPlayer(4)">Jugador 5</button>
+        <button class="player-btn" onclick="selectPlayer(5)">Jugador 6</button>
+      </div>
+
+      <div class="status">
+        <div class="status-label">SELECTED:</div>
+        <div class="status-value" id="selected">None</div>
+        <div class="status-label" style="margin-top: 10px;">REMAINING:</div>
+        <div class="status-value" id="remaining">-</div>
+      </div>
+
+      <button class="end-btn" id="endBtn" onclick="endDeployment()">✓ End Deployment</button>
+    </div>
+
+    <!-- Map Section -->
+    <div class="map-section">
+      <div class="map-frame">
+        <div class="map-wrapper" id="mapWrapper">
+          <img id="mapImg" src="map.jpg">
+          <svg id="ownership-overlay"></svg>
+          <svg id="hex-overlay"></svg>
+          <div id="army-overlay"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Log Panel -->
+    <div class="log" id="log"></div>
+  </div>
+
+  <script>
+    const img = document.getElementById('mapImg');
+    const mapWrapper = document.getElementById('mapWrapper');
+    const svgOwn = document.getElementById('ownership-overlay');
+    const svgHex = document.getElementById('hex-overlay');
+    const armyOverlay = document.getElementById('army-overlay');
+    const logElement = document.getElementById('log');
+
+    const COLS = 12, ROWS = 5;
+    const waterHexes = new Set(['2_1','3_1','4_0','4_1','5_0','6_0']);
+    const SHEET_ID = '12QzDZCtJlhVK7gNPfhPH43MoncUNnSfSvcws1P7z0yo';
+    const SHEET_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json`;
+
+    let teamMap = {};
+    let hexPositions = {};
+    let selectedPlayer = null;
+    let deploymentRemaining = [0, 0, 0, 0, 0, 0];
+    let deployedArmies = {};
+    let deploymentArmies = [0, 0, 0, 0, 0, 0];
+
+    function log(msg, type = 'info') {
+      const entry = document.createElement('div');
+      entry.className = `log-entry log-${type}`;
+      entry.textContent = msg;
+      logElement.appendChild(entry);
+      logElement.scrollTop = logElement.scrollHeight;
+      console.log(`[${type.toUpperCase()}] ${msg}`);
+    }
+
+    function parseGVizJSON(text) {
+      const map = {};
+      const json = JSON.parse(text.replace(/^[^(]+\(/, '').replace(/\);?\s*$/, ''));
+      const rows = json.table.rows;
+      
+      for (const row of rows) {
+        if (!row.c || !row.c[0] || !row.c[1]) continue;
+        const hex = (row.c[0].v || '').toString().trim();
+        const team = (row.c[1].v || '').toString().trim().toLowerCase();
+        if (hex) {
+          map[hex] = team;
+        }
+      }
+      return map;
+    }
+
+    function teamOf(col, row) {
+      const k = `${col}_${row}`;
+      if (waterHexes.has(k)) return null;
+      return teamMap[k] || null;
+    }
+
+    function getPlayerTeam(player) {
+      return player < 3 ? 'blue' : 'red';
+    }
+
+    function flatHexCorners(cx, cy, rv) {
+      const pts = [];
+      for (let i = 0; i < 6; i++) {
+        const angle = Math.PI / 180 * (60 * i);
+        pts.push(`${cx + rv * Math.cos(angle)},${cy + rv * Math.sin(angle)}`);
+      }
+      return pts.join(' ');
+    }
+
+    function initializeDeployment() {
+      log('Initializing deployment...', 'info');
+      
+      const teamCounts = { blue: 0, red: 0 };
+
+      for (let col = 0; col < COLS; col++) {
+        for (let row = 0; row < ROWS; row++) {
+          const team = teamOf(col, row);
+          if (team === 'blau') teamCounts.blue++;
+          else if (team === 'vermell') teamCounts.red++;
+        }
+      }
+
+      log(`Team counts: Blue=${teamCounts.blue}, Red=${teamCounts.red}`, 'info');
+
+      for (let i = 0; i < 6; i++) {
+        const team = getPlayerTeam(i);
+        const teamTotal = team === 'blue' ? teamCounts.blue : teamCounts.red;
+        const perPlayer = Math.floor(teamTotal / 3);
+        deploymentArmies[i] = perPlayer;
+        deploymentRemaining[i] = perPlayer;
+        log(`Player ${i + 1}: ${perPlayer} armies to deploy`, 'info');
+      }
+
+      deployedArmies = {};
+      drawAll();
+    }
+
+    function drawAll() {
+      const W = img.offsetWidth;
+      const H = img.offsetHeight;
+
+      svgOwn.setAttribute('viewBox', `0 0 ${W} ${H}`);
+      svgOwn.setAttribute('width', W);
+      svgOwn.setAttribute('height', H);
+      svgOwn.innerHTML = '';
+
+      svgHex.setAttribute('viewBox', `0 0 ${W} ${H}`);
+      svgHex.setAttribute('width', W);
+      svgHex.setAttribute('height', H);
+      svgHex.innerHTML = '';
+
+      armyOverlay.innerHTML = '';
+
+      const rW = W / (2 + 1.5 * (COLS - 1));
+      const rH = H / (ROWS * Math.sqrt(3) + 1);
+      const r = Math.min(rW, rH);
+      const hexH = Math.sqrt(3) * r;
+      const vr = hexH / 2;
+
+      hexPositions = {};
+
+      for (let col = 0; col < COLS; col++) {
+        const cx = r + col * 1.5 * r;
+        for (let row = 0; row < ROWS; row++) {
+          const team = teamOf(col, row);
+          if (!team) continue;
+          
+          const cy = vr + row * hexH + (col % 2 === 1 ? vr : 0);
+          hexPositions[`${col}_${row}`] = { cx, cy, r };
+          const pts = flatHexCorners(cx, cy, r - 1);
+
+          // CREATE CLICKABLE FILL
+          const fill = document.createElementNS('http://www.w3.org/2000/svg', 'polygon');
+          fill.setAttribute('points', pts);
+          fill.setAttribute('fill', team === 'blau' ? 'rgba(60,120,220,0.22)' : 'rgba(210,50,50,0.22)');
+          fill.setAttribute('stroke', 'none');
+          fill.style.cursor = 'pointer';
+          fill.style.pointerEvents = 'auto';
+          
+          (function(c, r) {
+            fill.addEventListener('click', function(e) {
+              e.stopPropagation();
+              deploymentHexClick(c, r);
+            });
+          })(col, row);
+          
+          svgOwn.appendChild(fill);
+
+          // CREATE STROKE OUTLINE
+          const poly = document.createElementNS('http://www.w3.org/2000/svg', 'polygon');
+          poly.setAttribute('points', pts);
+          poly.setAttribute('fill', 'none');
+          poly.setAttribute('stroke', team === 'blau' ? 'rgba(80,150,255,0.85)' : 'rgba(230,70,70,0.85)');
+          poly.setAttribute('stroke-width', '2.5');
+          poly.setAttribute('pointer-events', 'none');
+          svgHex.appendChild(poly);
+
+          // DRAW DEPLOYED ARMIES
+          const hexKey = `${col}_${row}`;
+          const deployedHere = deployedArmies[hexKey] || {};
+          
+          if (Object.keys(deployedHere).length > 0) {
+            const armyDiv = document.createElement('div');
+            armyDiv.style.position = 'absolute';
+            armyDiv.style.left = (cx - 15) + 'px';
+            armyDiv.style.top = (cy - 15) + 'px';
+            armyDiv.style.width = '30px';
+            armyDiv.style.height = '30px';
+            armyDiv.style.borderRadius = '50%';
+            armyDiv.style.border = '2px solid #c9a84c';
+            armyDiv.style.background = 'rgba(201,168,76,0.3)';
+            armyDiv.style.display = 'flex';
+            armyDiv.style.alignItems = 'center';
+            armyDiv.style.justifyContent = 'center';
+            armyDiv.style.fontSize = '12px';
+            armyDiv.style.fontWeight = 'bold';
+            armyDiv.style.color = '#c9a84c';
+            armyDiv.style.pointerEvents = 'none';
+            
+            let totalCount = 0;
+            for (const player in deployedHere) {
+              totalCount += deployedHere[player];
+            }
+            armyDiv.textContent = totalCount;
+            armyOverlay.appendChild(armyDiv);
+          }
+        }
+      }
+    }
+
+    function deploymentHexClick(col, row) {
+      const hexKey = `${col}_${row}`;
+      log(`[CLICK] ${hexKey}`, 'info');
+      
+      if (selectedPlayer === null) {
+        log(`  ✗ No player selected`, 'error');
+        return;
+      }
+
+      if (deploymentRemaining[selectedPlayer] <= 0) {
+        log(`  ✗ Player ${selectedPlayer + 1} has no armies left`, 'error');
+        return;
+      }
+
+      const playerTeam = getPlayerTeam(selectedPlayer);
+      const hexTeam = teamOf(col, row);
+
+      if ((playerTeam === 'blue' && hexTeam !== 'blau') || 
+          (playerTeam === 'red' && hexTeam !== 'vermell')) {
+        log(`  ✗ Team mismatch: player=${playerTeam}, hex=${hexTeam}`, 'error');
+        return;
+      }
+
+      if (!deployedArmies[hexKey]) {
+        deployedArmies[hexKey] = {};
+      }
+
+      deployedArmies[hexKey][selectedPlayer] = (deployedArmies[hexKey][selectedPlayer] || 0) + 1;
+      deploymentRemaining[selectedPlayer]--;
+
+      log(`  ✓ DEPLOYED! Player ${selectedPlayer + 1} → ${hexKey}`, 'success');
+      log(`     Remaining: ${deploymentRemaining[selectedPlayer]}`, 'success');
+      
+      updateUI();
+      drawAll();
+    }
+
+    window.selectPlayer = function(player) {
+      selectedPlayer = player;
+      log(`[SELECT] Player ${player + 1} (${getPlayerTeam(player)})`, 'success');
+      updateUI();
+    };
+
+    function updateUI() {
+      // Update buttons
+      const buttons = document.querySelectorAll('.player-btn');
+      buttons.forEach((btn, i) => {
+        btn.classList.toggle('active', i === selectedPlayer);
+      });
+
+      // Update status
+      document.getElementById('selected').textContent = 
+        selectedPlayer === null ? 'None' : `Player ${selectedPlayer + 1}`;
+      document.getElementById('remaining').textContent = 
+        selectedPlayer === null ? '-' : deploymentRemaining[selectedPlayer];
+
+      // Update end button
+      const allDeployed = deploymentRemaining.every(r => r === 0);
+      const endBtn = document.getElementById('endBtn');
+      if (allDeployed) {
+        endBtn.classList.add('ready');
+      } else {
+        endBtn.classList.remove('ready');
+      }
+    }
+
+    window.endDeployment = function() {
+      const allDeployed = deploymentRemaining.every(r => r === 0);
+      if (!allDeployed) {
+        alert('All players must deploy their armies!');
+        return;
+      }
+
+      log('[END DEPLOYMENT] Deployment complete!', 'success');
+      log(`Total deployed hexagons: ${Object.keys(deployedArmies).length}`, 'success');
+      alert('✓ Deployment Complete!');
+    };
+
+    async function loadData() {
+      try {
+        log('Loading spreadsheet data...', 'info');
+        const res = await fetch(SHEET_URL);
+        const text = await res.text();
+        teamMap = parseGVizJSON(text);
+        log(`✓ Data loaded: ${Object.keys(teamMap).length} hexagons`, 'success');
+      } catch(e) {
+        log(`✗ Error loading data: ${e.message}`, 'error');
+      }
+
+      if (img.complete) {
+        initializeDeployment();
+      } else {
+        img.addEventListener('load', initializeDeployment);
+      }
+    }
+
+    log('🟢 Deployment system initialized', 'success');
+    loadData();
+    window.addEventListener('resize', drawAll);
+  </script>
+</body>
+</html>
