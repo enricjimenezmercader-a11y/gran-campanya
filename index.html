@@ -273,6 +273,10 @@
       z-index: 500;
     }
 
+    #army-overlay {
+      z-index: 400;
+    }
+
     .deployment-highlight {
       fill: rgba(150, 200, 255, 0.4);
       stroke: #90d4ff;
@@ -352,6 +356,7 @@
       height: 37.5px;
       object-fit: contain;
       filter: drop-shadow(2px 2px 3px rgba(0,0,0,0.6));
+      image-rendering: crisp-edges;
     }
 
     .army-image.hidden {
@@ -1144,6 +1149,7 @@
       explosionOverlay.innerHTML = '';
       battleOverlay.innerHTML = '';
       arrowOverlay.innerHTML = '';
+      hexLabelOverlay.innerHTML = '';
       armyOverlay.innerHTML = '';
 
       const rW = W / (2 + 1.5 * (COLS - 1));
@@ -1461,7 +1467,7 @@
       const sortedArmies = [...armies].sort((a, b) => a.count - b.count);
       let totalArmies = sortedArmies.reduce((sum, a) => sum + a.count, 0);
 
-      if (hexKey) {
+      if (hexKey && gamePhase === 'movement') {
         for (const army of sortedArmies) {
           const moveKey = `${hexKey}_${army.player}`;
           const movedQty = movedQuantities[moveKey] || 0;
@@ -1486,7 +1492,7 @@
       let imageIndex = 0;
       for (const army of sortedArmies) {
         const moveKey = hexKey ? `${hexKey}_${army.player}` : null;
-        const movedQty = moveKey ? (movedQuantities[moveKey] || 0) : 0;
+        const movedQty = (moveKey && gamePhase === 'movement') ? (movedQuantities[moveKey] || 0) : 0;
         const displayCount = army.count - movedQty;
 
         for (let i = 0; i < army.count; i++) {
@@ -1494,6 +1500,9 @@
           armyImg.className = 'army-image';
           armyImg.src = getEquipImage(army.player);
           armyImg.alt = `Jugador ${army.player + 1}`;
+          armyImg.onerror = function() {
+            console.error(`Failed to load image: ${this.src}`);
+          };
           
           if (i >= displayCount) {
             armyImg.classList.add('hidden');
