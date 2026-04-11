@@ -818,11 +818,34 @@
       color: #ff6464;
       border: 1px solid #ff6464;
     }
+
+    .debug-console {
+      position: fixed;
+      bottom: 10px;
+      right: 10px;
+      width: 350px;
+      max-height: 250px;
+      background: #000;
+      border: 2px solid #0f0;
+      color: #0f0;
+      font-family: monospace;
+      font-size: 11px;
+      padding: 8px;
+      overflow-y: auto;
+      z-index: 9999;
+      display: block;
+      box-shadow: 0 0 10px rgba(0,255,0,0.3);
+    }
+
+    .debug-console div {
+      margin: 2px 0;
+      line-height: 1.3;
+    }
   </style>
 </head>
 <body>
   <div class="title-container">
-    <h1>Gran Campanya<span class="version-number">v10</span></h1>
+    <h1>Gran Campanya<span class="version-number">v11-DEBUG</span></h1>
   </div>
 
   <div class="hex-count-display">
@@ -872,7 +895,27 @@
     <button class="close-btn" onclick="closeSidePanel()">Close</button>
   </div>
 
+  <div class="debug-console" id="debugConsole"></div>
+
   <script>
+    // DEBUG SYSTEM
+    let debugLogs = [];
+    const debugConsole = document.getElementById('debugConsole');
+
+    function debug(msg) {
+      const timestamp = new Date().toLocaleTimeString();
+      debugLogs.push(`[${timestamp}] ${msg}`);
+      if (debugLogs.length > 20) debugLogs.shift();
+      updateDebugDisplay();
+    }
+
+    function updateDebugDisplay() {
+      debugConsole.innerHTML = debugLogs.map(l => `<div>${l}</div>`).join('');
+      debugConsole.scrollTop = debugConsole.scrollHeight;
+    }
+
+    debug('🟢 Game initialized');
+
     const img    = document.getElementById('mapImg');
     const mapWrapper = document.getElementById('mapWrapper');
     const svgOwn = document.getElementById('ownership-overlay');
@@ -923,9 +966,6 @@
     let deployedArmies = {};
     let selectedDeploymentPlayer = null;
     let teamHexagons = {};
-
-    // CRITICAL: Store hex col/row for click detection
-    let hexLookup = {};
 
     function getTeamTextColor(player) {
       return player < 3 ? '#5a96ff' : '#ff4a4a';
@@ -1025,6 +1065,7 @@
     }
 
     function initializeDeployment() {
+      debug('Initializing deployment...');
       const teamCounts = { blue: 0, red: 0 };
       teamHexagons = { blue: [], red: [] };
 
@@ -1041,6 +1082,8 @@
         }
       }
 
+      debug(`Blue: ${teamCounts.blue} hex, Red: ${teamCounts.red} hex`);
+
       deploymentArmies = {};
       deploymentRemaining = {};
 
@@ -1050,6 +1093,7 @@
         const perPlayer = Math.floor(teamTotal / 3);
         deploymentArmies[i] = perPlayer;
         deploymentRemaining[i] = perPlayer;
+        debug(`Player ${i+1} gets ${perPlayer} hexes to deploy`);
       }
 
       deployedArmies = {};
@@ -1103,6 +1147,7 @@
     }
 
     function selectDeploymentPlayer(player) {
+      debug(`Player ${player+1} selected`);
       selectedDeploymentPlayer = player;
       renderDeploymentPanel();
       drawAll();
@@ -1143,19 +1188,37 @@
       deploymentPanel.classList.add('hidden');
       selectedDeploymentPlayer = null;
       deployedArmies = {};
+      debug('🟡 Deployment phase complete - Moving to movement phase');
       drawAll();
     };
 
     function deploymentHexClick(col, row) {
-      if (gamePhase !== 'deployment' || selectedDeploymentPlayer === null) return;
-      if (deploymentRemaining[selectedDeploymentPlayer] <= 0) return;
+      debug(`🔵 CLICK on ${col}_${row}`);
+
+      if (gamePhase !== 'deployment') {
+        debug(`  ✗ Not deployment phase (phase=${gamePhase})`);
+        return;
+      }
+      
+      if (selectedDeploymentPlayer === null) {
+        debug(`  ✗ No player selected`);
+        return;
+      }
+      
+      if (deploymentRemaining[selectedDeploymentPlayer] <= 0) {
+        debug(`  ✗ Player ${selectedDeploymentPlayer+1} has no armies left`);
+        return;
+      }
 
       const hexKey = `${col}_${row}`;
       const playerTeam = getPlayerTeam(selectedDeploymentPlayer);
-
       const hexTeam = teamOf(col, row);
+
+      debug(`  Team check: Player=${playerTeam}, Hex=${hexTeam}`);
+
       if ((playerTeam === 'blue' && hexTeam !== 'blau') || 
           (playerTeam === 'red' && hexTeam !== 'vermell')) {
+        debug(`  ✗ Team mismatch!`);
         return;
       }
 
@@ -1166,6 +1229,8 @@
       deployedArmies[hexKey][selectedDeploymentPlayer] = 
         (deployedArmies[hexKey][selectedDeploymentPlayer] || 0) + 1;
       deploymentRemaining[selectedDeploymentPlayer]--;
+
+      debug(`  ✓ Deployed! Remaining: ${deploymentRemaining[selectedDeploymentPlayer]}`);
 
       renderDeploymentPanel();
       drawAll();
@@ -1197,9 +1262,6 @@
       arrowOverlay.innerHTML = '';
       hexLabelOverlay.innerHTML = '';
       armyOverlay.innerHTML = '';
-
-      // CLEAR hex lookup
-      hexLookup = {};
 
       const rW = W / (2 + 1.5 * (COLS - 1));
       const rH = H / (ROWS * Math.sqrt(3) + 1);
@@ -1984,6 +2046,7 @@
         teamMap = parseGVizJSON(text);
       } catch(e) {
         console.error('Error loading sheet:', e);
+        debug(`❌ Error loading sheet: ${e}`);
       }
       if (img.complete) {
         initializeDeployment();
