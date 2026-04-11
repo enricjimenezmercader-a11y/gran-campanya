@@ -818,11 +818,32 @@
       color: #ff6464;
       border: 1px solid #ff6464;
     }
+
+    .debug-console {
+      position: fixed;
+      bottom: 10px;
+      right: 10px;
+      width: 300px;
+      max-height: 200px;
+      background: #000;
+      border: 2px solid #0f0;
+      color: #0f0;
+      font-family: monospace;
+      font-size: 11px;
+      padding: 5px;
+      overflow-y: auto;
+      z-index: 9999;
+      display: none;
+    }
+
+    .debug-console.show {
+      display: block;
+    }
   </style>
 </head>
 <body>
   <div class="title-container">
-    <h1>Gran Campanya<span class="version-number">v8</span></h1>
+    <h1>Gran Campanya<span class="version-number">v9-DEBUG</span></h1>
   </div>
 
   <div class="hex-count-display">
@@ -872,7 +893,30 @@
     <button class="close-btn" onclick="closeSidePanel()">Close</button>
   </div>
 
+  <div class="debug-console" id="debugConsole"></div>
+
   <script>
+    // ===== DEBUG LOGGING =====
+    let debugLogs = [];
+    const debugConsole = document.getElementById('debugConsole');
+
+    function debug(msg) {
+      debugLogs.push(msg);
+      if (debugLogs.length > 15) debugLogs.shift();
+      debugConsole.innerHTML = debugLogs.map(l => `<div>${l}</div>`).join('');
+    }
+
+    function toggleDebug() {
+      debugConsole.classList.toggle('show');
+    }
+
+    // Show debug console on page load
+    setTimeout(() => {
+      debugConsole.classList.add('show');
+    }, 500);
+
+    // ===== END DEBUG =====
+
     const img    = document.getElementById('mapImg');
     const mapWrapper = document.getElementById('mapWrapper');
     const svgOwn = document.getElementById('ownership-overlay');
@@ -1022,6 +1066,7 @@
     }
 
     function initializeDeployment() {
+      debug('Initializing deployment...');
       const teamCounts = { blue: 0, red: 0 };
       teamHexagons = { blue: [], red: [] };
 
@@ -1038,6 +1083,8 @@
         }
       }
 
+      debug(`Blue hexes: ${teamCounts.blue}, Red hexes: ${teamCounts.red}`);
+
       deploymentArmies = {};
       deploymentRemaining = {};
 
@@ -1048,6 +1095,8 @@
         deploymentArmies[i] = perPlayer;
         deploymentRemaining[i] = perPlayer;
       }
+
+      debug(`Deployment armies initialized`);
 
       deployedArmies = {};
       renderDeploymentPanel();
@@ -1100,6 +1149,7 @@
     }
 
     function selectDeploymentPlayer(player) {
+      debug(`Selected player ${player}`);
       selectedDeploymentPlayer = player;
       renderDeploymentPanel();
       drawAll();
@@ -1144,15 +1194,32 @@
     };
 
     function deploymentHexClick(col, row) {
-      if (gamePhase !== 'deployment' || selectedDeploymentPlayer === null) return;
-      if (deploymentRemaining[selectedDeploymentPlayer] <= 0) return;
+      debug(`CLICK on hex ${col}_${row} | Phase: ${gamePhase} | Player: ${selectedDeploymentPlayer} | Remaining: ${selectedDeploymentPlayer !== null ? deploymentRemaining[selectedDeploymentPlayer] : 'N/A'}`);
+
+      if (gamePhase !== 'deployment') {
+        debug('  -> Not in deployment phase!');
+        return;
+      }
+      
+      if (selectedDeploymentPlayer === null) {
+        debug('  -> No player selected!');
+        return;
+      }
+      
+      if (deploymentRemaining[selectedDeploymentPlayer] <= 0) {
+        debug('  -> Player has no armies left!');
+        return;
+      }
 
       const hexKey = `${col}_${row}`;
       const playerTeam = getPlayerTeam(selectedDeploymentPlayer);
 
       const hexTeam = teamOf(col, row);
+      debug(`  -> Hex team: ${hexTeam}, Player team: ${playerTeam}`);
+
       if ((playerTeam === 'blue' && hexTeam !== 'blau') || 
           (playerTeam === 'red' && hexTeam !== 'vermell')) {
+        debug('  -> Wrong team for this hex!');
         return;
       }
 
@@ -1163,6 +1230,8 @@
       deployedArmies[hexKey][selectedDeploymentPlayer] = 
         (deployedArmies[hexKey][selectedDeploymentPlayer] || 0) + 1;
       deploymentRemaining[selectedDeploymentPlayer]--;
+
+      debug(`  -> DEPLOYED! New remaining: ${deploymentRemaining[selectedDeploymentPlayer]}`);
 
       renderDeploymentPanel();
       drawAll();
@@ -1203,6 +1272,7 @@
       const vr  = hexH / 2;
 
       let blueCount = 0, redCount = 0;
+      let deploymentHighlightCount = 0;
 
       hexPositions = {};
 
@@ -1254,10 +1324,12 @@
               highlightPoly.setAttribute('points', pts);
               highlightPoly.setAttribute('class', 'deployment-highlight');
               deploymentSvg.appendChild(highlightPoly);
+              deploymentHighlightCount++;
 
               (function(c, r) {
                 highlightPoly.addEventListener('click', function(e) {
                   e.stopPropagation();
+                  debug(`Deployment highlight clicked: ${c}_${r}`);
                   deploymentHexClick(c, r);
                 });
               })(col, row);
@@ -1323,10 +1395,11 @@
         }
       }
 
+      debug(`Deployment highlights drawn: ${deploymentHighlightCount}`);
+
       if (gamePhase === 'movement') {
         detectBattles();
         
-        // ONLY draw destination highlights if actively selecting a destination
         if (activeDestinationHexes.length > 0 && currentHex !== null) {
           for (const hexKey of activeDestinationHexes) {
             if (hexPositions[hexKey]) {
@@ -1357,7 +1430,6 @@
           }
         }
 
-        // Draw movement arrows and pending battles
         for (const movement of pendingMovements) {
           if (movement.quantity <= 0) continue;
 
@@ -1663,7 +1735,6 @@
 
       statusDiv.innerHTML = '<div class="status-message status-success">Moviment ordenat!</div>';
       
-      // CRITICAL FIX v8: Clear everything IMMEDIATELY
       activeDestinationHexes = [];
       currentHex = null;
       
