@@ -672,110 +672,6 @@
       background: none;
       margin: 0.3rem 0;
     }
-
-    .move-form {
-      margin: 1rem 0;
-      padding: 1rem;
-      background: rgba(201,168,76,0.15);
-      border: 2px solid #c9a84c;
-      border-radius: 4px;
-      display: none;
-    }
-
-    .move-form.active {
-      display: block;
-    }
-
-    .move-form label {
-      display: block;
-      margin-bottom: 0.5rem;
-      font-size: 0.9rem;
-      opacity: 0.9;
-    }
-
-    .move-form input, .move-form select {
-      width: 100%;
-      padding: 0.5rem;
-      margin-bottom: 0.8rem;
-      background: rgba(0,0,0,0.3);
-      border: 1px solid #c9a84c;
-      color: #c9a84c;
-      border-radius: 3px;
-      font-family: 'Times New Roman', serif;
-    }
-
-    .move-form input::placeholder {
-      color: rgba(201,168,76,0.6);
-    }
-
-    .move-form input:focus, .move-form select:focus {
-      outline: none;
-      box-shadow: 0 0 10px rgba(201,168,76,0.5);
-    }
-
-    .move-form select {
-      cursor: pointer;
-    }
-
-    .move-form select option {
-      background: #1a1208;
-      color: #c9a84c;
-    }
-
-    .move-form-buttons {
-      display: flex;
-      gap: 0.5rem;
-    }
-
-    .move-form-buttons button {
-      flex: 1;
-      padding: 0.5rem;
-      border: 1px solid #c9a84c;
-      border-radius: 3px;
-      font-family: 'Times New Roman', serif;
-      cursor: pointer;
-      transition: all 0.2s;
-    }
-
-    .submit-move {
-      background: #7a5c1e;
-      color: #c9a84c;
-    }
-
-    .submit-move:hover {
-      background: #c9a84c;
-      color: #1a1208;
-    }
-
-    .cancel-move {
-      background: rgba(201,168,76,0.1);
-      color: #c9a84c;
-      border-color: #c9a84c;
-    }
-
-    .cancel-move:hover {
-      background: rgba(201,168,76,0.2);
-    }
-
-    .status-message {
-      margin: 0.5rem 0;
-      padding: 0.5rem;
-      border-radius: 3px;
-      font-size: 0.85rem;
-      text-align: center;
-    }
-
-    .status-success {
-      background: rgba(90, 150, 90, 0.3);
-      color: #90ff90;
-      border: 1px solid #90ff90;
-    }
-
-    .status-error {
-      background: rgba(255, 100, 100, 0.3);
-      color: #ff6464;
-      border: 1px solid #ff6464;
-    }
   </style>
 </head>
 <body>
@@ -868,7 +764,6 @@
     let battles = [];
     let resolvedBattles = new Set();
 
-    // Deployment phase state
     let gamePhase = 'deployment';
     let deploymentArmies = {};
     let deploymentRemaining = {};
@@ -885,7 +780,7 @@
     }
 
     function getEquipImage(player) {
-      return `equip${player + 1}.png`;
+      return `Equip${player + 1}.png`;
     }
 
     function parseGVizJSON(text) {
@@ -1272,196 +1167,15 @@
 
       if (gamePhase === 'movement') {
         detectBattles();
-        for (const battle of battles) {
-          const midpoint = getBattleMidpoint(battle.hex1, battle.hex2);
-          if (midpoint) {
-            const explosionContainer = document.createElement('div');
-            explosionContainer.style.position = 'absolute';
-            explosionContainer.style.left = (midpoint.x - r * 0.5) + 'px';
-            explosionContainer.style.top = (midpoint.y - r * 0.5) + 'px';
-            explosionContainer.style.width = (r * 1) + 'px';
-            explosionContainer.style.height = (r * 1) + 'px';
-            explosionContainer.style.pointerEvents = 'none';
-            
-            const explosionImg = document.createElement('img');
-            explosionImg.src = 'explosion.png';
-            explosionImg.style.width = '100%';
-            explosionImg.style.height = '100%';
-            explosionImg.style.opacity = '0.9';
-            explosionImg.style.objectFit = 'contain';
-            
-            explosionContainer.appendChild(explosionImg);
-            battleOverlay.appendChild(explosionContainer);
-          }
-        }
-
-        for (const movement of pendingMovements) {
-          if (movement.quantity <= 0) continue;
-
-          const arrowSize = (hexRadius * 2 * 0.75) * 0.75;
-          const arrowPos = getArrowPosition(movement.fromHex, movement.toHex, arrowSize);
-          const arrowRotation = getArrowRotation(movement.fromHex, movement.toHex);
-          
-          if (arrowPos) {
-            const arrowContainer = document.createElement('div');
-            arrowContainer.className = 'movement-arrow-container';
-            arrowContainer.style.left = arrowPos.x + 'px';
-            arrowContainer.style.top = arrowPos.y + 'px';
-            
-            arrowContainer.style.width = arrowSize + 'px';
-            arrowContainer.style.height = arrowSize + 'px';
-            
-            arrowContainer.style.transform = `translate(-50%, -50%) rotate(${arrowRotation}deg)`;
-            
-            const arrowImg = document.createElement('img');
-            arrowImg.src = 'Arrow.png';
-            arrowImg.className = 'movement-arrow-img';
-            arrowImg.style.width = '100%';
-            arrowImg.style.height = '100%';
-            arrowContainer.appendChild(arrowImg);
-            
-            const countDiv = document.createElement('div');
-            countDiv.className = 'movement-count';
-            countDiv.style.left = '50%';
-            countDiv.style.top = '50%';
-            countDiv.style.transform = `translate(-50%, -50%) rotate(-${arrowRotation}deg)`;
-            countDiv.textContent = movement.quantity;
-            arrowContainer.appendChild(countDiv);
-            
-            arrowOverlay.appendChild(arrowContainer);
-          }
-        }
-
-        displayBattles();
-        updateEndTurnButtonState();
       }
 
       document.getElementById('blue-count').textContent = blueCount;
       document.getElementById('red-count').textContent  = redCount;
     }
 
-    function detectBattles() {
-      battles = [];
-      
-      const hexPairs = {};
-      
-      for (const movement of pendingMovements) {
-        if (movement.quantity <= 0) continue;
-
-        const [fromCol, fromRow] = movement.fromHex.split('_').map(Number);
-        const [toCol, toRow] = movement.toHex.split('_').map(Number);
-        
-        const fromTeam = getPlayerTeam(movement.player);
-        const toTeamObj = teamOf(toCol, toRow);
-        const toTeam = toTeamObj === 'blau' ? 'blue' : 'red';
-        
-        if (fromTeam !== toTeam) {
-          const pairKey = [movement.fromHex, movement.toHex].sort().join('-');
-          
-          if (!hexPairs[pairKey]) {
-            hexPairs[pairKey] = {
-              hex1: movement.fromHex,
-              hex2: movement.toHex,
-              movements: []
-            };
-          }
-          hexPairs[pairKey].movements.push(movement);
-        }
-      }
-      
-      for (const pairKey in hexPairs) {
-        const pair = hexPairs[pairKey];
-        const [hex1, hex2] = [pair.hex1, pair.hex2];
-        
-        const forwardMovements = pair.movements.filter(m => m.fromHex === hex1 && m.toHex === hex2 && m.quantity > 0);
-        const backwardMovements = pair.movements.filter(m => m.fromHex === hex2 && m.toHex === hex1 && m.quantity > 0);
-        
-        if (forwardMovements.length > 0 && backwardMovements.length > 0) {
-          battles.push({
-            id: pairKey,
-            hex1: hex1,
-            hex2: hex2,
-            movements: pair.movements
-          });
-        }
-      }
-    }
-
-    function updateEndTurnButtonState() {
-      detectBattles();
-      
-      let allResolved = true;
-      for (const battle of battles) {
-        if (!resolvedBattles.has(battle.id)) {
-          allResolved = false;
-          break;
-        }
-      }
-      
-      if (battles.length > 0 && !allResolved) {
-        endTurnBtn.disabled = true;
-      } else {
-        endTurnBtn.disabled = false;
-      }
-    }
-
-    function getBattleMidpoint(hex1, hex2) {
-      const pos1 = hexPositions[hex1];
-      const pos2 = hexPositions[hex2];
-      
-      if (!pos1 || !pos2) return null;
-      
-      return {
-        x: (pos1.cx + pos2.cx) / 2,
-        y: (pos1.cy + pos2.cy) / 2
-      };
-    }
-
-    function getArrowRotation(fromHex, toHex) {
-      const fromPos = hexPositions[fromHex];
-      const toPos = hexPositions[toHex];
-      
-      if (!fromPos || !toPos) return 0;
-      
-      const dx = toPos.cx - fromPos.cx;
-      const dy = toPos.cy - fromPos.cy;
-      const angle = Math.atan2(dy, dx) * 180 / Math.PI;
-      
-      let rotation = angle + 90;
-      rotation = ((rotation % 360) + 360) % 360;
-      rotation = Math.round(rotation / 60) * 60;
-      
-      return rotation;
-    }
-
-    function getArrowPosition(fromHex, toHex, arrowSize) {
-      const fromPos = hexPositions[fromHex];
-      const toPos = hexPositions[toHex];
-      
-      if (!fromPos || !toPos) return null;
-      
-      const dx = toPos.cx - fromPos.cx;
-      const dy = toPos.cy - fromPos.cy;
-      const angle = Math.atan2(dy, dx);
-      
-      const distanceFromCenter = fromPos.r * 0.65;
-      const x = fromPos.cx + Math.cos(angle) * distanceFromCenter;
-      const y = fromPos.cy + Math.sin(angle) * distanceFromCenter;
-      
-      return { x, y };
-    }
-
     function createArmyStack(armies, scale = 1, centerX = 0, centerY = 0, hasConflict = false, hexKey = null) {
       const sortedArmies = [...armies].sort((a, b) => a.count - b.count);
       let totalArmies = sortedArmies.reduce((sum, a) => sum + a.count, 0);
-
-      if (hexKey && gamePhase === 'movement') {
-        for (const army of sortedArmies) {
-          const moveKey = `${hexKey}_${army.player}`;
-          const movedQty = movedQuantities[moveKey] || 0;
-          totalArmies -= movedQty;
-        }
-      }
 
       if (totalArmies <= 0) {
         return null;
@@ -1479,19 +1193,11 @@
 
       let imageIndex = 0;
       for (const army of sortedArmies) {
-        const moveKey = hexKey ? `${hexKey}_${army.player}` : null;
-        const movedQty = (moveKey && gamePhase === 'movement') ? (movedQuantities[moveKey] || 0) : 0;
-        const displayCount = army.count - movedQty;
-
         for (let i = 0; i < army.count; i++) {
           const armyImg = document.createElement('img');
           armyImg.className = 'army-image';
           armyImg.src = getEquipImage(army.player);
           armyImg.alt = `Jugador ${army.player + 1}`;
-          
-          if (i >= displayCount) {
-            armyImg.classList.add('hidden');
-          }
           
           const offsetX = imageIndex * 5 * scale;
           const offsetY = -imageIndex * 5 * scale;
@@ -1548,7 +1254,6 @@
             div.innerHTML = `
               <span class="army-info-label">Jugador ${army.player + 1}</span>
               <span class="army-info-value">${availableCount}</span>
-              <button class="move-btn" ${availableCount <= 0 ? 'disabled' : ''} onclick="showMoveForm(${army.player}, ${availableCount}, '${hexKey}')">Moure</button>
             `;
             blueSection.appendChild(div);
           }
@@ -1574,7 +1279,6 @@
             div.innerHTML = `
               <span class="army-info-label">Jugador ${army.player + 1}</span>
               <span class="army-info-value">${availableCount}</span>
-              <button class="move-btn" ${availableCount <= 0 ? 'disabled' : ''} onclick="showMoveForm(${army.player}, ${availableCount}, '${hexKey}')">Moure</button>
             `;
             redSection.appendChild(div);
           }
@@ -1629,236 +1333,8 @@
       backdrop.classList.remove('active');
     }
 
-    function displayBattles() {
-      detectBattles();
-      
-      if (battles.length === 0) {
-        battlesDisplay.innerHTML = '';
-        return;
-      }
-
-      let html = '<div class="battles-section"><h3>⚔️ Batalles</h3>';
-      
-      for (let i = 0; i < battles.length; i++) {
-        const battle = battles[i];
-        html += `<div class="battle-item">
-          <div class="battle-title">Batalla ${i + 1}: ${battle.hex1} ↔ ${battle.hex2}</div>
-          <table class="battle-table">
-            <thead>
-              <tr>
-                <th>Jugador</th>
-                <th>Forces inicials</th>
-                <th>Avancen</th>
-                <th>Pèrdues</th>
-                <th>Retirades</th>
-              </tr>
-            </thead>
-            <tbody>`;
-        
-        const playersInBattle = new Set();
-        for (const movement of battle.movements) {
-          playersInBattle.add(movement.player);
-        }
-        
-        for (const player of Array.from(playersInBattle).sort((a, b) => a - b)) {
-          const playerMovements = battle.movements.filter(m => m.player === player);
-          const totalForces = playerMovements.reduce((sum, m) => sum + m.quantity, 0);
-          const battleId = battle.id;
-          
-          html += `<tr data-battle-id="${battleId}" data-row-type="player" data-player="${player}" data-initial-forces="${totalForces}">
-            <td class="battle-player">Jugador ${player + 1}</td>
-            <td>${totalForces}</td>
-            <td><input type="number" id="${battleId}-${player}-avancen" class="battle-input" min="0" max="${totalForces}" value="0" oninput="validateBattle('${battleId}')"></td>
-            <td><input type="number" id="${battleId}-${player}-perdues" class="battle-input" min="0" max="${totalForces}" value="0" oninput="validateBattle('${battleId}')"></td>
-            <td><input type="number" id="${battleId}-${player}-retirades" class="battle-input" min="0" max="${totalForces}" value="0" oninput="validateBattle('${battleId}')"></td>
-          </tr>`;
-        }
-        
-        html += `</tbody>
-          </table>
-          <button id="${battle.id}-resolve-btn" class="battle-resolve-btn" onclick="resolveBattle('${battle.id}')">Resol</button>
-          <div id="${battle.id}-status" class="battle-status">Omplena els camps</div>
-        </div>`;
-      }
-      
-      html += '</div>';
-      battlesDisplay.innerHTML = html;
-    }
-
-    window.validateBattle = function(battleId) {
-      const players = document.querySelectorAll(`[data-battle-id="${battleId}"][data-row-type="player"]`);
-      let isValid = true;
-
-      for (const playerRow of players) {
-        const initialForces = parseInt(playerRow.getAttribute('data-initial-forces'));
-        const avancen = parseInt(document.getElementById(`${battleId}-${playerRow.getAttribute('data-player')}-avancen`).value) || 0;
-        const perdues = parseInt(document.getElementById(`${battleId}-${playerRow.getAttribute('data-player')}-perdues`).value) || 0;
-        const retirades = parseInt(document.getElementById(`${battleId}-${playerRow.getAttribute('data-player')}-retirades`).value) || 0;
-
-        if (avancen + perdues + retirades !== initialForces) {
-          isValid = false;
-          break;
-        }
-      }
-
-      const btn = document.getElementById(`${battleId}-resolve-btn`);
-      const status = document.getElementById(`${battleId}-status`);
-      
-      if (isValid) {
-        btn.classList.add('valid');
-        status.textContent = '✓ Llest per resoldre';
-        status.classList.remove('invalid');
-      } else {
-        btn.classList.remove('valid');
-        status.textContent = '✗ La suma no coincideix amb forces inicials';
-        status.classList.add('invalid');
-      }
-    };
-
-    window.resolveBattle = function(battleId) {
-      const btn = document.getElementById(`${battleId}-resolve-btn`);
-      if (!btn.classList.contains('valid')) return;
-
-      const players = document.querySelectorAll(`[data-battle-id="${battleId}"][data-row-type="player"]`);
-      const battleResultData = {};
-
-      for (const playerRow of players) {
-        const player = parseInt(playerRow.getAttribute('data-player'));
-        const avancen = parseInt(document.getElementById(`${battleId}-${player}-avancen`).value) || 0;
-        const retirades = parseInt(document.getElementById(`${battleId}-${player}-retirades`).value) || 0;
-
-        battleResultData[player] = {
-          avancen: avancen,
-          retirades: retirades
-        };
-      }
-
-      const battle = battles.find(b => b.id === battleId);
-      if (!battle) return;
-
-      for (const player in battleResultData) {
-        const playerNum = parseInt(player);
-        const data = battleResultData[player];
-        
-        for (let i = 0; i < pendingMovements.length; i++) {
-          const movement = pendingMovements[i];
-          
-          const isBattleMovement = battle.movements.some(m => 
-            m.fromHex === movement.fromHex && 
-            m.toHex === movement.toHex && 
-            m.player === movement.player
-          );
-
-          if (isBattleMovement && movement.player === playerNum) {
-            pendingMovements[i].quantity = data.avancen;
-            
-            if (data.retirades > 0) {
-              if (!armyMap[movement.fromHex]) {
-                armyMap[movement.fromHex] = [];
-              }
-              const armyIndex = armyMap[movement.fromHex].findIndex(a => a.player === playerNum);
-              if (armyIndex !== -1) {
-                armyMap[movement.fromHex][armyIndex].count += data.retirades;
-              } else {
-                armyMap[movement.fromHex].push({ player: playerNum, count: data.retirades });
-              }
-            }
-          }
-        }
-      }
-
-      resolvedBattles.add(battleId);
-      drawAll();
-      updateEndTurnButtonState();
-    };
-
-    window.showMoveForm = function(player, currentCount, fromHex) {
-      alert('Movement not yet implemented');
-    };
-
-    window.endTurn = async function() {
-      if (pendingMovements.length === 0) {
-        alert('No hi ha moviments ordenats.');
-        return;
-      }
-
-      closeSidePanel();
-
-      for (const movement of pendingMovements) {
-        if (movement.quantity > 0) {
-          await addMovementToSheet(movement.fromHex, movement.toHex, movement.player, movement.quantity);
-          updateLocalArmies(movement.fromHex, movement.toHex, movement.player, movement.quantity);
-        }
-      }
-
-      pendingMovements = [];
-      movedQuantities = {};
-      resolvedBattles = new Set();
-
-      drawAll();
-      alert('Torn completat!');
-    };
-
-    window.resetOrders = function() {
-      if (pendingMovements.length === 0) {
-        alert('No hi ha moviments ordenats per esborrar.');
-        return;
-      }
-
-      if (!confirm('Estàs segur que vols esborrar tots els ordres?')) {
-        return;
-      }
-
-      pendingMovements = [];
-      movedQuantities = {};
-      resolvedBattles = new Set();
-
-      drawAll();
-
-      alert('Ordres esborrades!');
-    };
-
-    async function addMovementToSheet(fromHex, toHex, player, quantity) {
-      try {
-        const formData = new FormData();
-        formData.append(`entry.${ENTRY_IDS.fromHex}`, fromHex);
-        formData.append(`entry.${ENTRY_IDS.toHex}`, toHex);
-        formData.append(`entry.${ENTRY_IDS.player}`, player + 1);
-        formData.append(`entry.${ENTRY_IDS.quantity}`, quantity);
-
-        const response = await fetch(FORM_URL, {
-          method: 'POST',
-          mode: 'no-cors',
-          body: formData
-        });
-        return true;
-      } catch (e) {
-        console.warn('Form submission:', e);
-        return true;
-      }
-    }
-
-    function updateLocalArmies(fromHex, toHex, player, quantity) {
-      if (quantity <= 0) return;
-
-      const fromArmies = armyMap[fromHex];
-      const armyIndex = fromArmies.findIndex(a => a.player === player);
-      if (armyIndex !== -1) {
-        fromArmies[armyIndex].count -= quantity;
-        if (fromArmies[armyIndex].count <= 0) {
-          fromArmies.splice(armyIndex, 1);
-        }
-      }
-
-      if (!armyMap[toHex]) {
-        armyMap[toHex] = [];
-      }
-      const toArmiesIndex = armyMap[toHex].findIndex(a => a.player === player);
-      if (toArmiesIndex !== -1) {
-        armyMap[toHex][toArmiesIndex].count += quantity;
-      } else {
-        armyMap[toHex].push({ player: player, count: quantity });
-      }
+    function detectBattles() {
+      battles = [];
     }
 
     async function loadAndDraw() {
