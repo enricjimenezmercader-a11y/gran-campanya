@@ -306,6 +306,7 @@
 
     #deployment-overlay {
       z-index: 500;
+      pointer-events: auto;
     }
 
     #army-overlay {
@@ -821,7 +822,7 @@
 </head>
 <body>
   <div class="title-container">
-    <h1>Gran Campanya<span class="version-number">v7</span></h1>
+    <h1>Gran Campanya<span class="version-number">v8</span></h1>
   </div>
 
   <div class="hex-count-display">
@@ -1171,11 +1172,11 @@
       const W = img.offsetWidth;
       const H = img.offsetHeight;
 
-      [svgOwn, svgHex, destinationSvg].forEach(s => {
+      [svgOwn, svgHex].forEach(s => {
         s.setAttribute('viewBox', `0 0 ${W} ${H}`);
         s.setAttribute('width', W);
         s.setAttribute('height', H);
-        if (s !== destinationSvg) s.innerHTML = '';
+        s.innerHTML = '';
       });
 
       deploymentSvg.setAttribute('viewBox', `0 0 ${W} ${H}`);
@@ -1183,14 +1184,16 @@
       deploymentSvg.setAttribute('height', H);
       deploymentSvg.innerHTML = '';
 
+      destinationSvg.setAttribute('viewBox', `0 0 ${W} ${H}`);
+      destinationSvg.setAttribute('width', W);
+      destinationSvg.setAttribute('height', H);
+      destinationSvg.innerHTML = '';
+
       explosionOverlay.innerHTML = '';
       battleOverlay.innerHTML = '';
       arrowOverlay.innerHTML = '';
       hexLabelOverlay.innerHTML = '';
       armyOverlay.innerHTML = '';
-      
-      // CRITICAL: Clear destination SVG completely on every redraw
-      destinationSvg.innerHTML = '';
 
       const rW = W / (2 + 1.5 * (COLS - 1));
       const rH = H / (ROWS * Math.sqrt(3) + 1);
@@ -1660,13 +1663,12 @@
 
       statusDiv.innerHTML = '<div class="status-message status-success">Moviment ordenat!</div>';
       
-      // CRITICAL FIX v7: Clear everything IMMEDIATELY
+      // CRITICAL FIX v8: Clear everything IMMEDIATELY
       activeDestinationHexes = [];
       currentHex = null;
       
       setTimeout(() => {
         cancelMove(player, fromHex);
-        // Don't reopen panel - just redraw cleanly
         drawAll();
       }, 800);
     };
