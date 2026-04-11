@@ -21,14 +21,21 @@
 
     h1 {
       color: #c9a84c;
-      margin-bottom: 20px;
+      margin-bottom: 10px;
       text-shadow: 0 0 12px rgba(201,168,76,0.7);
+    }
+
+    .version {
+      color: #7a5c1e;
+      font-size: 0.8rem;
+      margin-bottom: 20px;
     }
 
     .container {
       display: flex;
       gap: 30px;
-      max-width: 1400px;
+      max-width: 1600px;
+      width: 100%;
     }
 
     .panel {
@@ -39,6 +46,8 @@
       color: #c9a84c;
       font-family: 'Times New Roman', serif;
       border-radius: 4px;
+      max-height: 75vh;
+      overflow-y: auto;
     }
 
     .panel h2 {
@@ -48,11 +57,25 @@
       padding-bottom: 10px;
     }
 
+    .team-section {
+      margin-bottom: 15px;
+    }
+
+    .team-section h3 {
+      font-size: 1rem;
+      margin: 15px 0 10px 0;
+      padding-bottom: 5px;
+      border-bottom: 1px solid rgba(201,168,76,0.3);
+    }
+
+    .team-section.blue h3 { color: #5a96ff; }
+    .team-section.red h3 { color: #ff4a4a; }
+
     .player-btn {
       display: block;
       width: 100%;
-      padding: 12px;
-      margin: 8px 0;
+      padding: 10px;
+      margin: 5px 0;
       background: #1a1208;
       border: 2px solid #7a5c1e;
       color: #c9a84c;
@@ -60,6 +83,7 @@
       border-radius: 3px;
       transition: all 0.2s;
       font-weight: bold;
+      font-size: 0.9rem;
     }
 
     .player-btn:hover {
@@ -70,6 +94,15 @@
       background: #c9a84c;
       color: #1a1208;
       border-color: #c9a84c;
+    }
+
+    .player-info {
+      margin-top: 10px;
+      padding: 10px;
+      background: rgba(201,168,76,0.1);
+      border-left: 3px solid #c9a84c;
+      border-radius: 2px;
+      font-size: 0.85rem;
     }
 
     .status {
@@ -83,7 +116,7 @@
 
     .status-label {
       color: #7a5c1e;
-      font-size: 0.85rem;
+      font-size: 0.8rem;
       margin-bottom: 5px;
     }
 
@@ -93,274 +126,6 @@
       font-weight: bold;
     }
 
-    #svg {
-      border: 3px solid #7a5c1e;
-      background: #000;
-      cursor: crosshair;
-      box-shadow: 0 0 20px rgba(0,0,0,0.8);
-    }
-
-    .log {
-      width: 350px;
-      background: #000;
-      border: 2px solid #0f0;
-      padding: 15px;
-      color: #0f0;
-      font-family: monospace;
-      font-size: 11px;
-      max-height: 600px;
-      overflow-y: auto;
-      border-radius: 3px;
-    }
-
-    .log-entry {
-      margin: 3px 0;
-      line-height: 1.4;
-    }
-
-    .log-success { color: #0f0; }
-    .log-error { color: #ff4444; }
-    .log-info { color: #00ffff; }
-
-    .end-btn {
-      margin-top: 20px;
-      padding: 12px;
-      width: 100%;
-      background: #5a5a5a;
-      border: 2px solid #8a8a8a;
-      color: #8a8a8a;
-      cursor: not-allowed;
-      border-radius: 3px;
-      font-weight: bold;
-      transition: all 0.2s;
-    }
-
-    .end-btn.ready {
-      background: #7a5c1e;
-      border-color: #c9a84c;
-      color: #c9a84c;
-      cursor: pointer;
-    }
-
-    .end-btn.ready:hover {
-      background: #c9a84c;
-      color: #1a1208;
-    }
-
-    .hex-count {
-      margin-top: 15px;
-      padding: 10px;
-      background: rgba(201,168,76,0.1);
-      border-left: 3px solid #c9a84c;
-      border-radius: 2px;
-      font-size: 0.9rem;
-    }
-  </style>
-</head>
-<body>
-  <h1>🎮 Gran Campanya - DEPLOYMENT PHASE ONLY</h1>
-
-  <div class="container">
-    <!-- Deployment Panel -->
-    <div class="panel">
-      <h2>📋 Desplegament</h2>
-      
-      <h3 style="color: #5a96ff; margin: 15px 0 10px 0; font-size: 1rem;">🔵 Equip Blau</h3>
-      <button class="player-btn" onclick="selectPlayer(0)">Player 1</button>
-      <button class="player-btn" onclick="selectPlayer(1)">Player 2</button>
-      <button class="player-btn" onclick="selectPlayer(2)">Player 3</button>
-
-      <h3 style="color: #ff4a4a; margin: 15px 0 10px 0; font-size: 1rem;">🔴 Equip Vermell</h3>
-      <button class="player-btn" onclick="selectPlayer(3)">Player 4</button>
-      <button class="player-btn" onclick="selectPlayer(4)">Player 5</button>
-      <button class="player-btn" onclick="selectPlayer(5)">Player 6</button>
-
-      <div class="status">
-        <div class="status-label">SELECTED PLAYER:</div>
-        <div class="status-value" id="selected">None</div>
-        <div class="status-label" style="margin-top: 10px;">ARMIES REMAINING:</div>
-        <div class="status-value" id="remaining">-</div>
-      </div>
-
-      <div class="hex-count">
-        <strong>Total Hexagons:</strong><br>
-        🔵 Blue: 9<br>
-        🔴 Red: 9<br>
-        <strong>Per Player:</strong> 3
-      </div>
-
-      <button class="end-btn" id="endBtn" onclick="endDeployment()">✓ End Deployment</button>
-    </div>
-
-    <!-- SVG Map -->
-    <svg id="svg" width="700" height="600" viewBox="0 0 700 600"></svg>
-
-    <!-- Log Panel -->
-    <div class="log" id="log"></div>
-  </div>
-
-  <script>
-    const svg = document.getElementById('svg');
-    const logElement = document.getElementById('log');
-    
-    let selectedPlayer = null;
-    let deploymentRemaining = [3, 3, 3, 3, 3, 3];
-    let deployedArmies = {};
-    let hexagons = {};
-
-    function log(msg, type = 'info') {
-      const entry = document.createElement('div');
-      entry.className = `log-entry log-${type}`;
-      entry.textContent = msg;
-      logElement.appendChild(entry);
-      logElement.scrollTop = logElement.scrollHeight;
-      console.log(`[${type.toUpperCase()}] ${msg}`);
-    }
-
-    function createHexagon(col, row, cx, cy, r) {
-      const hexId = `${col}_${row}`;
-      
-      // Determine team (9 blue, 9 red in 5x4 grid)
-      const isBlue = (col + row) % 2 === 0;
-      const team = isBlue ? 'blue' : 'red';
-      
-      // Create hex points
-      const pts = [];
-      for (let i = 0; i < 6; i++) {
-        const angle = Math.PI / 180 * (60 * i);
-        pts.push(`${cx + r * Math.cos(angle)},${cy + r * Math.sin(angle)}`);
-      }
-      
-      // Create FILL polygon (clickable)
-      const fill = document.createElementNS('http://www.w3.org/2000/svg', 'polygon');
-      fill.setAttribute('points', pts.join(' '));
-      fill.setAttribute('fill', team === 'blue' ? 'rgba(60,120,220,0.3)' : 'rgba(210,50,50,0.3)');
-      fill.setAttribute('stroke', 'none');
-      fill.style.cursor = 'pointer';
-      fill.style.pointerEvents = 'auto';
-      
-      // Add click listener
-      fill.addEventListener('click', function(e) {
-        e.stopPropagation();
-        deploymentHexClick(hexId, team);
-      });
-      
-      svg.appendChild(fill);
-
-      // Create STROKE polygon (non-clickable outline)
-      const stroke = document.createElementNS('http://www.w3.org/2000/svg', 'polygon');
-      stroke.setAttribute('points', pts.join(' '));
-      stroke.setAttribute('fill', 'none');
-      stroke.setAttribute('stroke', team === 'blue' ? '#5a96ff' : '#ff4a4a');
-      stroke.setAttribute('stroke-width', '2');
-      stroke.setAttribute('pointer-events', 'none');
-      
-      svg.appendChild(stroke);
-
-      hexagons[hexId] = { team, col, row };
-    }
-
-    function deploymentHexClick(hexId, hexTeam) {
-      log(`[HEX CLICK] ${hexId} (${hexTeam})`, 'info');
-      
-      if (selectedPlayer === null) {
-        log(`  ✗ No player selected`, 'error');
-        return;
-      }
-
-      if (deploymentRemaining[selectedPlayer] <= 0) {
-        log(`  ✗ Player ${selectedPlayer + 1} has no armies left`, 'error');
-        return;
-      }
-
-      const playerTeam = selectedPlayer < 3 ? 'blue' : 'red';
-      
-      if (playerTeam !== hexTeam) {
-        log(`  ✗ Team mismatch: player=${playerTeam}, hex=${hexTeam}`, 'error');
-        return;
-      }
-
-      if (!deployedArmies[hexId]) {
-        deployedArmies[hexId] = {};
-      }
-
-      deployedArmies[hexId][selectedPlayer] = (deployedArmies[hexId][selectedPlayer] || 0) + 1;
-      deploymentRemaining[selectedPlayer]--;
-
-      log(`  ✓ DEPLOYED! Player ${selectedPlayer + 1} → ${hexId}`, 'success');
-      log(`     Remaining: ${deploymentRemaining[selectedPlayer]}`, 'success');
-      
-      updateUI();
-      highlightDeployed();
-    }
-
-    window.selectPlayer = function(player) {
-      selectedPlayer = player;
-      log(`[SELECT] Player ${player + 1} (${player < 3 ? 'Blue' : 'Red'})`, 'success');
-      updateUI();
-    };
-
-    function updateUI() {
-      // Update buttons
-      const buttons = document.querySelectorAll('.player-btn');
-      buttons.forEach((btn, i) => {
-        btn.classList.toggle('active', i === selectedPlayer);
-      });
-
-      // Update status
-      document.getElementById('selected').textContent = 
-        selectedPlayer === null ? 'None' : `Player ${selectedPlayer + 1}`;
-      document.getElementById('remaining').textContent = 
-        selectedPlayer === null ? '-' : deploymentRemaining[selectedPlayer];
-
-      // Update end button
-      const allDeployed = deploymentRemaining.every(r => r === 0);
-      const endBtn = document.getElementById('endBtn');
-      if (allDeployed) {
-        endBtn.classList.add('ready');
-      } else {
-        endBtn.classList.remove('ready');
-      }
-    }
-
-    function highlightDeployed() {
-      // Add visual feedback for deployed hexes
-      const polygons = svg.querySelectorAll('polygon');
-      polygons.forEach(poly => {
-        poly.style.opacity = '1';
-      });
-    }
-
-    window.endDeployment = function() {
-      const allDeployed = deploymentRemaining.every(r => r === 0);
-      if (!allDeployed) {
-        alert('All players must deploy their armies!');
-        return;
-      }
-
-      log('[END DEPLOYMENT] Deployment phase complete!', 'success');
-      log(`Deployed hexagons: ${Object.keys(deployedArmies).length}`, 'success');
-      alert('✓ Deployment Complete! Move to movement phase.');
-    };
-
-    // Initialize
-    log('🟢 Deployment system initialized', 'success');
-    log('Created 5x4 grid (18 hexagons total)', 'info');
-    
-    // Create hex grid
-    const r = 45;
-    const hexH = Math.sqrt(3) * r;
-    const vr = hexH / 2;
-
-    for (let col = 0; col < 5; col++) {
-      const cx = 80 + col * 1.5 * r;
-      for (let row = 0; row < 4; row++) {
-        const cy = 80 + row * hexH + (col % 2 === 1 ? vr : 0);
-        createHexagon(col, row, cx, cy, r);
-      }
-    }
-
-    log('✓ Grid rendered - Select a player and click hexagons', 'success');
-  </script>
-</body>
-</html>
+    .map-section {
+      display*
+
