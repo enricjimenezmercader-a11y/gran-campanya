@@ -242,8 +242,10 @@
 
     #ownership-overlay, #hex-overlay, #army-overlay, #explosion-overlay, #hex-label-overlay, #destination-overlay, #arrow-overlay, #battle-overlay, #deployment-overlay {
       position: absolute;
-      top: 0; left: 0;
-      width: 100%; height: 100%;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
       pointer-events: none;
     }
 
@@ -252,7 +254,6 @@
     }
 
     #destination-overlay {
-      pointer-events: none;
       z-index: 600;
     }
 
@@ -269,7 +270,6 @@
     }
 
     #deployment-overlay {
-      pointer-events: none;
       z-index: 500;
     }
 
@@ -352,8 +352,8 @@
 
     .army-image {
       position: absolute;
-      width: 37.5px;
-      height: 37.5px;
+      width: 100%;
+      height: 100%;
       object-fit: contain;
       filter: drop-shadow(2px 2px 3px rgba(0,0,0,0.6));
       image-rendering: crisp-edges;
@@ -361,11 +361,7 @@
 
     .army-image.hidden {
       opacity: 0;
-    }
-
-    .army-stack.conflict .army-image {
-      width: 18.75px;
-      height: 18.75px;
+      pointer-events: none;
     }
 
     .destination-highlight {
@@ -799,7 +795,7 @@
         <div class="map-frame">
           <span class="corner-tr"></span>
           <span class="corner-bl"></span>
-          <div class="map-wrapper">
+          <div class="map-wrapper" id="mapWrapper">
             <img id="mapImg" src="map.jpg">
             <svg id="ownership-overlay"></svg>
             <svg id="hex-overlay"></svg>
@@ -829,6 +825,7 @@
 
   <script>
     const img    = document.getElementById('mapImg');
+    const mapWrapper = document.getElementById('mapWrapper');
     const svgOwn = document.getElementById('ownership-overlay');
     const svgHex = document.getElementById('hex-overlay');
     const deploymentSvg = document.getElementById('deployment-overlay');
@@ -872,12 +869,12 @@
     let resolvedBattles = new Set();
 
     // Deployment phase state
-    let gamePhase = 'deployment'; // 'deployment' or 'movement'
-    let deploymentArmies = {}; // { player: count }
-    let deploymentRemaining = {}; // { player: remaining count }
-    let deployedArmies = {}; // { hex: { player: count } }
+    let gamePhase = 'deployment';
+    let deploymentArmies = {};
+    let deploymentRemaining = {};
+    let deployedArmies = {};
     let selectedDeploymentPlayer = null;
-    let teamHexagons = {}; // { team: [hexes] }
+    let teamHexagons = {};
 
     function getTeamTextColor(player) {
       return player < 3 ? '#5a96ff' : '#ff4a4a';
@@ -977,7 +974,6 @@
     }
 
     function initializeDeployment() {
-      // Count hexagons per team
       const teamCounts = { blue: 0, red: 0 };
       teamHexagons = { blue: [], red: [] };
 
@@ -994,7 +990,6 @@
         }
       }
 
-      // Calculate armies per player
       deploymentArmies = {};
       deploymentRemaining = {};
 
@@ -1014,7 +1009,6 @@
     function renderDeploymentPanel() {
       let html = '';
       
-      // Blue team
       html += '<div class="team-deployment blue"><h3>🔵 Equip Blau</h3>';
       for (let i = 0; i < 3; i++) {
         const deployed = deploymentArmies[i] - deploymentRemaining[i];
@@ -1034,7 +1028,6 @@
       }
       html += '</div>';
 
-      // Red team
       html += '<div class="team-deployment red"><h3>🔴 Equip Vermell</h3>';
       for (let i = 3; i < 6; i++) {
         const deployed = deploymentArmies[i] - deploymentRemaining[i];
@@ -1079,7 +1072,6 @@
         return;
       }
 
-      // Add deployed armies to armyMap
       for (const hexKey in deployedArmies) {
         if (!armyMap[hexKey]) {
           armyMap[hexKey] = [];
@@ -1096,7 +1088,6 @@
         }
       }
 
-      // Switch to movement phase
       gamePhase = 'movement';
       deploymentPanel.classList.add('hidden');
       selectedDeploymentPlayer = null;
@@ -1111,7 +1102,6 @@
       const hexKey = `${col}_${row}`;
       const playerTeam = getPlayerTeam(selectedDeploymentPlayer);
 
-      // Check if hex belongs to player's team
       const hexTeam = teamOf(col, row);
       if ((playerTeam === 'blue' && hexTeam !== 'blau') || 
           (playerTeam === 'red' && hexTeam !== 'vermell')) {
@@ -1203,7 +1193,6 @@
           poly.setAttribute('pointer-events', 'none');
           svgHex.appendChild(poly);
 
-          // Draw deployment highlights ONLY during deployment phase
           if (gamePhase === 'deployment' && selectedDeploymentPlayer !== null) {
             const playerTeam = getPlayerTeam(selectedDeploymentPlayer);
             if ((playerTeam === 'blue' && team === 'blau') || 
@@ -1265,7 +1254,6 @@
               }
             }
           } else if (Object.keys(deployedHere).length > 0 && gamePhase === 'deployment') {
-            // Deploy only armies (no base armies) - only show during deployment
             const deploymentArmiesArray = [];
             for (const player in deployedHere) {
               deploymentArmiesArray.push({ 
@@ -1500,9 +1488,6 @@
           armyImg.className = 'army-image';
           armyImg.src = getEquipImage(army.player);
           armyImg.alt = `Jugador ${army.player + 1}`;
-          armyImg.onerror = function() {
-            console.error(`Failed to load image: ${this.src}`);
-          };
           
           if (i >= displayCount) {
             armyImg.classList.add('hidden');
@@ -1513,9 +1498,6 @@
           
           armyImg.style.left = offsetX + 'px';
           armyImg.style.top = offsetY + 'px';
-          armyImg.style.width = stackSize + 'px';
-          armyImg.style.height = stackSize + 'px';
-          armyImg.style.zIndex = imageIndex;
           
           stack.appendChild(armyImg);
           imageIndex++;
