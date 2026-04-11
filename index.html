@@ -269,8 +269,21 @@
     }
 
     #deployment-overlay {
-      pointer-events: auto;
+      pointer-events: none;
       z-index: 500;
+    }
+
+    .deployment-highlight {
+      fill: rgba(150, 200, 255, 0.4);
+      stroke: #90d4ff;
+      stroke-width: 3;
+      pointer-events: auto;
+      cursor: pointer;
+    }
+
+    .deployment-highlight:hover {
+      fill: rgba(150, 200, 255, 0.6);
+      filter: drop-shadow(0 0 8px #90d4ff);
     }
 
     .action-buttons {
@@ -368,19 +381,6 @@
       pointer-events: none;
       transform: translate(-50%, -50%);
       z-index: 601;
-    }
-
-    .deployment-highlight {
-      fill: rgba(150, 200, 255, 0.4);
-      stroke: #90d4ff;
-      stroke-width: 3;
-      pointer-events: auto;
-      cursor: pointer;
-    }
-
-    .deployment-highlight:hover {
-      fill: rgba(150, 200, 255, 0.6);
-      filter: drop-shadow(0 0 8px #90d4ff);
     }
 
     .movement-arrow-container {
@@ -640,6 +640,141 @@
     .battle-status.invalid {
       color: #ff6464;
     }
+
+    .close-btn {
+      background: #7a5c1e;
+      border: 2px solid #c9a84c;
+      color: #c9a84c;
+      padding: 0.5rem 1rem;
+      border-radius: 4px;
+      cursor: pointer;
+      font-family: 'Times New Roman', serif;
+      margin-top: 1rem;
+      transition: all 0.2s;
+      width: 100%;
+    }
+
+    .close-btn:hover {
+      background: #c9a84c;
+      color: #1a1208;
+    }
+
+    .total-info {
+      margin-top: 1.5rem;
+      padding: 0.8rem;
+      background: rgba(201,168,76,0.15);
+      border: 2px solid #c9a84c;
+      border-radius: 4px;
+    }
+
+    .total-info .army-info {
+      background: none;
+      margin: 0.3rem 0;
+    }
+
+    .move-form {
+      margin: 1rem 0;
+      padding: 1rem;
+      background: rgba(201,168,76,0.15);
+      border: 2px solid #c9a84c;
+      border-radius: 4px;
+      display: none;
+    }
+
+    .move-form.active {
+      display: block;
+    }
+
+    .move-form label {
+      display: block;
+      margin-bottom: 0.5rem;
+      font-size: 0.9rem;
+      opacity: 0.9;
+    }
+
+    .move-form input, .move-form select {
+      width: 100%;
+      padding: 0.5rem;
+      margin-bottom: 0.8rem;
+      background: rgba(0,0,0,0.3);
+      border: 1px solid #c9a84c;
+      color: #c9a84c;
+      border-radius: 3px;
+      font-family: 'Times New Roman', serif;
+    }
+
+    .move-form input::placeholder {
+      color: rgba(201,168,76,0.6);
+    }
+
+    .move-form input:focus, .move-form select:focus {
+      outline: none;
+      box-shadow: 0 0 10px rgba(201,168,76,0.5);
+    }
+
+    .move-form select {
+      cursor: pointer;
+    }
+
+    .move-form select option {
+      background: #1a1208;
+      color: #c9a84c;
+    }
+
+    .move-form-buttons {
+      display: flex;
+      gap: 0.5rem;
+    }
+
+    .move-form-buttons button {
+      flex: 1;
+      padding: 0.5rem;
+      border: 1px solid #c9a84c;
+      border-radius: 3px;
+      font-family: 'Times New Roman', serif;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .submit-move {
+      background: #7a5c1e;
+      color: #c9a84c;
+    }
+
+    .submit-move:hover {
+      background: #c9a84c;
+      color: #1a1208;
+    }
+
+    .cancel-move {
+      background: rgba(201,168,76,0.1);
+      color: #c9a84c;
+      border-color: #c9a84c;
+    }
+
+    .cancel-move:hover {
+      background: rgba(201,168,76,0.2);
+    }
+
+    .status-message {
+      margin: 0.5rem 0;
+      padding: 0.5rem;
+      border-radius: 3px;
+      font-size: 0.85rem;
+      text-align: center;
+    }
+
+    .status-success {
+      background: rgba(90, 150, 90, 0.3);
+      color: #90ff90;
+      border: 1px solid #90ff90;
+    }
+
+    .status-error {
+      background: rgba(255, 100, 100, 0.3);
+      color: #ff6464;
+      border: 1px solid #ff6464;
+    }
   </style>
 </head>
 <body>
@@ -745,6 +880,10 @@
 
     function getPlayerTeam(player) {
       return player < 3 ? 'blue' : 'red';
+    }
+
+    function getEquipImage(player) {
+      return `equip${player + 1}.png`;
     }
 
     function parseGVizJSON(text) {
@@ -956,6 +1095,7 @@
       gamePhase = 'movement';
       deploymentPanel.classList.add('hidden');
       selectedDeploymentPlayer = null;
+      deployedArmies = {};
       drawAll();
     };
 
@@ -1057,7 +1197,7 @@
           poly.setAttribute('pointer-events', 'none');
           svgHex.appendChild(poly);
 
-          // Draw deployment highlights for selected player
+          // Draw deployment highlights ONLY during deployment phase
           if (gamePhase === 'deployment' && selectedDeploymentPlayer !== null) {
             const playerTeam = getPlayerTeam(selectedDeploymentPlayer);
             if ((playerTeam === 'blue' && team === 'blau') || 
@@ -1112,14 +1252,14 @@
             } else {
               const stack = createArmyStack(armies, 1, cx, cy, false, hexKey);
               if (stack) {
-                if (Object.keys(deployedHere).length > 0) {
+                if (Object.keys(deployedHere).length > 0 && gamePhase === 'deployment') {
                   stack.classList.add('deployment');
                 }
                 armyOverlay.appendChild(stack);
               }
             }
-          } else if (Object.keys(deployedHere).length > 0) {
-            // Deploy only armies (no base armies)
+          } else if (Object.keys(deployedHere).length > 0 && gamePhase === 'deployment') {
+            // Deploy only armies (no base armies) - only show during deployment
             const deploymentArmiesArray = [];
             for (const player in deployedHere) {
               deploymentArmiesArray.push({ 
@@ -1205,9 +1345,6 @@
       document.getElementById('blue-count').textContent = blueCount;
       document.getElementById('red-count').textContent  = redCount;
     }
-
-    // Rest of the code (detectBattles, createArmyStack, etc.) remains the same...
-    // [Previous functions continue here - detectBattles, showHexPanel, createArmyStack, etc.]
 
     function detectBattles() {
       battles = [];
@@ -1355,7 +1492,7 @@
         for (let i = 0; i < army.count; i++) {
           const armyImg = document.createElement('img');
           armyImg.className = 'army-image';
-          armyImg.src = `Equip${army.player}.jpg`;
+          armyImg.src = getEquipImage(army.player);
           armyImg.alt = `Jugador ${army.player + 1}`;
           
           if (i >= displayCount) {
@@ -1645,7 +1782,6 @@
     };
 
     window.showMoveForm = function(player, currentCount, fromHex) {
-      // Movement phase function
       alert('Movement not yet implemented');
     };
 
