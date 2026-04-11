@@ -770,9 +770,11 @@
         
         playerNames = ['Jugador 1', 'Jugador 2', 'Jugador 3', 'Jugador 4', 'Jugador 5', 'Jugador 6'];
         
-        for (let i = 0; i < Math.min(6, rows.length); i++) {
-          if (rows[i].c && rows[i].c[1] && rows[i].c[1].v) {
-            const customName = rows[i].c[1].v.toString().trim();
+        // Skip header row (row 0) and read rows 1-6 for players 0-5
+        for (let i = 0; i < Math.min(6, rows.length - 1); i++) {
+          const rowIndex = i + 1; // Offset by 1 to skip header
+          if (rows[rowIndex] && rows[rowIndex].c && rows[rowIndex].c[1] && rows[rowIndex].c[1].v) {
+            const customName = rows[rowIndex].c[1].v.toString().trim();
             if (customName) {
               playerNames[i] = customName;
             }
