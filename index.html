@@ -290,6 +290,14 @@
       filter: drop-shadow(0 0 8px #90d4ff);
     }
 
+    .destination-highlight {
+      fill: rgba(200, 220, 100, 0.5);
+      stroke: #ffff00;
+      stroke-width: 4;
+      filter: drop-shadow(0 0 8px #ffff00);
+      pointer-events: none;
+    }
+
     .action-buttons {
       display: flex;
       gap: 1rem;
@@ -361,14 +369,6 @@
 
     .army-image.hidden {
       opacity: 0;
-      pointer-events: none;
-    }
-
-    .destination-highlight {
-      fill: rgba(200, 220, 100, 0.5);
-      stroke: #ffff00;
-      stroke-width: 4;
-      filter: drop-shadow(0 0 8px #ffff00);
       pointer-events: none;
     }
 
@@ -515,6 +515,90 @@
       border-color: #8a8a8a;
     }
 
+    .move-form {
+      margin: 1rem 0;
+      padding: 1rem;
+      background: rgba(201,168,76,0.15);
+      border: 2px solid #c9a84c;
+      border-radius: 4px;
+      display: none;
+    }
+
+    .move-form.active {
+      display: block;
+    }
+
+    .move-form label {
+      display: block;
+      margin-bottom: 0.5rem;
+      font-size: 0.9rem;
+      opacity: 0.9;
+    }
+
+    .move-form input, .move-form select {
+      width: 100%;
+      padding: 0.5rem;
+      margin-bottom: 0.8rem;
+      background: rgba(0,0,0,0.3);
+      border: 1px solid #c9a84c;
+      color: #c9a84c;
+      border-radius: 3px;
+      font-family: 'Times New Roman', serif;
+    }
+
+    .move-form input::placeholder {
+      color: rgba(201,168,76,0.6);
+    }
+
+    .move-form input:focus, .move-form select:focus {
+      outline: none;
+      box-shadow: 0 0 10px rgba(201,168,76,0.5);
+    }
+
+    .move-form select {
+      cursor: pointer;
+    }
+
+    .move-form select option {
+      background: #1a1208;
+      color: #c9a84c;
+    }
+
+    .move-form-buttons {
+      display: flex;
+      gap: 0.5rem;
+    }
+
+    .move-form-buttons button {
+      flex: 1;
+      padding: 0.5rem;
+      border: 1px solid #c9a84c;
+      border-radius: 3px;
+      font-family: 'Times New Roman', serif;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .submit-move {
+      background: #7a5c1e;
+      color: #c9a84c;
+    }
+
+    .submit-move:hover {
+      background: #c9a84c;
+      color: #1a1208;
+    }
+
+    .cancel-move {
+      background: rgba(201,168,76,0.1);
+      color: #c9a84c;
+      border-color: #c9a84c;
+    }
+
+    .cancel-move:hover {
+      background: rgba(201,168,76,0.2);
+    }
+
     .overlay-backdrop {
       display: none;
       position: fixed;
@@ -528,118 +612,6 @@
 
     .overlay-backdrop.active {
       display: block;
-    }
-
-    .battles-section {
-      margin-top: 2rem;
-      padding: 1rem;
-      background: rgba(201,168,76,0.1);
-      border: 2px solid #c9a84c;
-      border-radius: 4px;
-    }
-
-    .battles-section h3 {
-      font-size: 1.3rem;
-      margin-bottom: 1rem;
-      color: #c9a84c;
-      font-family: 'UnifrakturMaguntia', cursive;
-    }
-
-    .battle-item {
-      margin-bottom: 1.5rem;
-      padding: 1rem;
-      background: rgba(201,168,76,0.05);
-      border-left: 4px solid #c9a84c;
-      border-radius: 3px;
-    }
-
-    .battle-title {
-      font-weight: bold;
-      color: #c9a84c;
-      margin-bottom: 0.8rem;
-      font-size: 0.95rem;
-    }
-
-    .battle-table {
-      width: 100%;
-      border-collapse: collapse;
-      font-size: 0.85rem;
-      margin-bottom: 0.8rem;
-    }
-
-    .battle-table th {
-      background: rgba(201,168,76,0.2);
-      color: #c9a84c;
-      padding: 0.5rem;
-      text-align: left;
-      border-bottom: 1px solid #c9a84c;
-      font-weight: bold;
-    }
-
-    .battle-table td {
-      padding: 0.5rem;
-      border-bottom: 1px solid rgba(201,168,76,0.3);
-      color: #fff;
-    }
-
-    .battle-table tr:last-child td {
-      border-bottom: none;
-    }
-
-    .battle-player {
-      color: #c9a84c;
-      font-weight: bold;
-    }
-
-    .battle-input {
-      width: 50px;
-      background: rgba(0,0,0,0.3);
-      border: 1px solid #c9a84c;
-      color: #fff;
-      padding: 0.3rem;
-      border-radius: 2px;
-      font-family: 'Times New Roman', serif;
-    }
-
-    .battle-input:focus {
-      outline: none;
-      box-shadow: 0 0 5px rgba(201,168,76,0.5);
-    }
-
-    .battle-resolve-btn {
-      padding: 0.6rem 1.2rem;
-      background: #5a5a5a;
-      border: 2px solid #8a8a8a;
-      color: #8a8a8a;
-      border-radius: 3px;
-      cursor: not-allowed;
-      font-family: 'Times New Roman', serif;
-      font-weight: bold;
-      transition: all 0.2s;
-      width: 100%;
-    }
-
-    .battle-resolve-btn.valid {
-      background: #7a5c1e;
-      border-color: #c9a84c;
-      color: #c9a84c;
-      cursor: pointer;
-    }
-
-    .battle-resolve-btn.valid:hover {
-      background: #c9a84c;
-      color: #1a1208;
-    }
-
-    .battle-status {
-      margin-top: 0.5rem;
-      font-size: 0.8rem;
-      color: #ffff99;
-      font-style: italic;
-    }
-
-    .battle-status.invalid {
-      color: #ff6464;
     }
 
     .close-btn {
@@ -671,6 +643,26 @@
     .total-info .army-info {
       background: none;
       margin: 0.3rem 0;
+    }
+
+    .status-message {
+      margin: 0.5rem 0;
+      padding: 0.5rem;
+      border-radius: 3px;
+      font-size: 0.85rem;
+      text-align: center;
+    }
+
+    .status-success {
+      background: rgba(90, 150, 90, 0.3);
+      color: #90ff90;
+      border: 1px solid #90ff90;
+    }
+
+    .status-error {
+      background: rgba(255, 100, 100, 0.3);
+      color: #ff6464;
+      border: 1px solid #ff6464;
     }
   </style>
 </head>
@@ -761,8 +753,6 @@
     let hexPositions = {};
     let activeDestinationHexes = [];
     let hexRadius = 50;
-    let battles = [];
-    let resolvedBattles = new Set();
 
     let gamePhase = 'deployment';
     let deploymentArmies = {};
@@ -1072,7 +1062,7 @@
               e.stopPropagation();
               if (gamePhase === 'deployment') {
                 deploymentHexClick(c, r);
-              } else {
+              } else if (gamePhase === 'movement') {
                 showHexPanel(c, r);
               }
             });
@@ -1111,42 +1101,12 @@
           const deployedHere = deployedArmies[hexKey] || {};
           
           if (armies && armies.length > 0) {
-            const blueArmies = armies.filter(a => a.player < 3);
-            const redArmies = armies.filter(a => a.player >= 3);
-            const hasConflict = blueArmies.length > 0 && redArmies.length > 0;
-
-            if (hasConflict) {
-              const explosionContainer = document.createElement('div');
-              explosionContainer.style.position = 'absolute';
-              explosionContainer.style.left = (cx - r * 0.7) + 'px';
-              explosionContainer.style.top = (cy - r * 0.7) + 'px';
-              explosionContainer.style.width = (r * 1.4) + 'px';
-              explosionContainer.style.height = (r * 1.4) + 'px';
-              explosionContainer.style.pointerEvents = 'none';
-              
-              const explosionImg = document.createElement('img');
-              explosionImg.src = 'explosion.png';
-              explosionImg.style.width = '100%';
-              explosionImg.style.height = '100%';
-              explosionImg.style.opacity = '0.75';
-              explosionImg.style.objectFit = 'contain';
-              
-              explosionContainer.appendChild(explosionImg);
-              explosionOverlay.appendChild(explosionContainer);
-
-              const blueStack = createArmyStack(blueArmies, 0.5, cx - r * 0.5, cy, true, hexKey);
-              if (blueStack) armyOverlay.appendChild(blueStack);
-
-              const redStack = createArmyStack(redArmies, 0.5, cx + r * 0.5, cy, true, hexKey);
-              if (redStack) armyOverlay.appendChild(redStack);
-            } else {
-              const stack = createArmyStack(armies, 1, cx, cy, false, hexKey);
-              if (stack) {
-                if (Object.keys(deployedHere).length > 0 && gamePhase === 'deployment') {
-                  stack.classList.add('deployment');
-                }
-                armyOverlay.appendChild(stack);
+            const stack = createArmyStack(armies, 1, cx, cy, false, hexKey);
+            if (stack) {
+              if (Object.keys(deployedHere).length > 0 && gamePhase === 'deployment') {
+                stack.classList.add('deployment');
               }
+              armyOverlay.appendChild(stack);
             }
           } else if (Object.keys(deployedHere).length > 0 && gamePhase === 'deployment') {
             const deploymentArmiesArray = [];
@@ -1166,7 +1126,37 @@
       }
 
       if (gamePhase === 'movement') {
-        detectBattles();
+        // Draw destination hexes if they exist
+        if (activeDestinationHexes.length > 0) {
+          for (const hexKey of activeDestinationHexes) {
+            if (hexPositions[hexKey]) {
+              const { cx, cy, r } = hexPositions[hexKey];
+              const pts = flatHexCorners(cx, cy, r - 1);
+
+              const polygon = document.createElementNS('http://www.w3.org/2000/svg', 'polygon');
+              polygon.setAttribute('points', pts);
+              polygon.setAttribute('class', 'destination-highlight');
+              polygon.style.cursor = 'pointer';
+              
+              (function(hexK) {
+                polygon.addEventListener('click', function(e) {
+                  e.stopPropagation();
+                  const [destCol, destRow] = hexK.split('_').map(Number);
+                  confirmMovement(destCol, destRow);
+                });
+              })(hexKey);
+              
+              destinationSvg.appendChild(polygon);
+
+              const label = document.createElement('div');
+              label.className = 'destination-label';
+              label.style.left = cx + 'px';
+              label.style.top = cy + 'px';
+              label.textContent = hexKey;
+              hexLabelOverlay.appendChild(label);
+            }
+          }
+        }
       }
 
       document.getElementById('blue-count').textContent = blueCount;
@@ -1181,11 +1171,10 @@
         return null;
       }
 
-      let stackSize = hasConflict ? 56.25 : 37.5;
-      if (scale === 0.5) stackSize *= scale;
+      let stackSize = 37.5;
 
       const stack = document.createElement('div');
-      stack.className = scale === 0.5 ? 'army-stack conflict' : 'army-stack';
+      stack.className = 'army-stack';
       stack.style.width = stackSize + 'px';
       stack.style.height = stackSize + 'px';
       stack.style.left = (centerX - stackSize / 2) + 'px';
@@ -1214,8 +1203,6 @@
     }
 
     function showHexPanel(col, row) {
-      if (gamePhase !== 'movement') return;
-
       const hexKey = `${col}_${row}`;
       const team = teamOf(col, row);
       
@@ -1254,6 +1241,7 @@
             div.innerHTML = `
               <span class="army-info-label">Jugador ${army.player + 1}</span>
               <span class="army-info-value">${availableCount}</span>
+              <button class="move-btn" ${availableCount <= 0 ? 'disabled' : ''} onclick="showMoveForm(${army.player}, ${availableCount}, '${hexKey}')">Moure</button>
             `;
             blueSection.appendChild(div);
           }
@@ -1279,6 +1267,7 @@
             div.innerHTML = `
               <span class="army-info-label">Jugador ${army.player + 1}</span>
               <span class="army-info-value">${availableCount}</span>
+              <button class="move-btn" ${availableCount <= 0 ? 'disabled' : ''} onclick="showMoveForm(${army.player}, ${availableCount}, '${hexKey}')">Moure</button>
             `;
             redSection.appendChild(div);
           }
@@ -1331,10 +1320,186 @@
     function closeSidePanel() {
       sidePanel.classList.remove('active');
       backdrop.classList.remove('active');
+      activeDestinationHexes = [];
+      drawAll();
     }
 
-    function detectBattles() {
-      battles = [];
+    window.showMoveForm = function(player, currentCount, fromHex) {
+      const [fromCol, fromRow] = fromHex.split('_').map(Number);
+      const adjacentHexes = getAdjacentHexes(fromCol, fromRow);
+
+      const moveFormId = `move-form-${player}`;
+      let moveForm = document.getElementById(moveFormId);
+
+      if (moveForm) {
+        moveForm.classList.add('active');
+      } else {
+        moveForm = document.createElement('div');
+        moveForm.id = moveFormId;
+        moveForm.className = 'move-form active';
+        
+        let selectOptions = '<option value="">Selecciona hexagon...</option>';
+        for (const hex of adjacentHexes) {
+          selectOptions += `<option value="${hex}">${hex}</option>`;
+        }
+        
+        moveForm.innerHTML = `
+          <label>Jugador ${player + 1} - Moure ${currentCount} exèrcits</label>
+          <select id="dest-hex-${player}" onchange="updateDestinationHighlight(this.value, '${fromHex}')">
+            ${selectOptions}
+          </select>
+          <input type="number" id="qty-${player}" min="1" max="${currentCount}" value="1" placeholder="Quantitat">
+          <div id="status-${player}"></div>
+          <div class="move-form-buttons">
+            <button class="submit-move" onclick="orderMovement('${fromHex}', ${player}, ${currentCount})">Ordenar</button>
+            <button class="cancel-move" onclick="cancelMove(${player}, '${fromHex}')">Cancel·lar</button>
+          </div>
+        `;
+        document.getElementById('armyDetails').appendChild(moveForm);
+      }
+
+      activeDestinationHexes = adjacentHexes;
+      drawAll();
+    };
+
+    window.updateDestinationHighlight = function(selectedHex, fromHex) {
+      if (!selectedHex) {
+        const [fromCol, fromRow] = fromHex.split('_').map(Number);
+        activeDestinationHexes = getAdjacentHexes(fromCol, fromRow);
+      } else {
+        activeDestinationHexes = [selectedHex];
+      }
+      drawAll();
+    };
+
+    window.orderMovement = function(fromHex, player, currentCount) {
+      const destHexSelect = document.getElementById(`dest-hex-${player}`);
+      const qtyInput = document.getElementById(`qty-${player}`);
+      const statusDiv = document.getElementById(`status-${player}`);
+
+      const toHex = destHexSelect.value;
+      const quantity = parseInt(qtyInput.value);
+
+      if (!toHex || isNaN(quantity) || quantity <= 0 || quantity > currentCount) {
+        statusDiv.innerHTML = '<div class="status-message status-error">Entrada invàlida</div>';
+        return;
+      }
+
+      pendingMovements.push({
+        fromHex: fromHex,
+        toHex: toHex,
+        player: player,
+        quantity: quantity
+      });
+
+      const moveKey = `${fromHex}_${player}`;
+      movedQuantities[moveKey] = (movedQuantities[moveKey] || 0) + quantity;
+
+      statusDiv.innerHTML = '<div class="status-message status-success">Moviment ordenat!</div>';
+      
+      activeDestinationHexes = [];
+      drawAll();
+      
+      setTimeout(() => {
+        cancelMove(player, fromHex);
+        showHexPanel(...fromHex.split('_').map(Number));
+      }, 800);
+    };
+
+    window.cancelMove = function(player, fromHex) {
+      const moveForm = document.getElementById(`move-form-${player}`);
+      if (moveForm) {
+        moveForm.classList.remove('active');
+      }
+      activeDestinationHexes = [];
+      drawAll();
+    };
+
+    function confirmMovement(destCol, destRow) {
+      // Placeholder for battle mechanics
+    }
+
+    window.endTurn = async function() {
+      if (pendingMovements.length === 0) {
+        alert('No hi ha moviments ordenats.');
+        return;
+      }
+
+      closeSidePanel();
+
+      for (const movement of pendingMovements) {
+        if (movement.quantity > 0) {
+          await addMovementToSheet(movement.fromHex, movement.toHex, movement.player, movement.quantity);
+          updateLocalArmies(movement.fromHex, movement.toHex, movement.player, movement.quantity);
+        }
+      }
+
+      pendingMovements = [];
+      movedQuantities = {};
+
+      drawAll();
+      alert('Torn completat!');
+    };
+
+    window.resetOrders = function() {
+      if (pendingMovements.length === 0) {
+        alert('No hi ha moviments ordenats per esborrar.');
+        return;
+      }
+
+      if (!confirm('Estàs segur que vols esborrar tots els ordres?')) {
+        return;
+      }
+
+      pendingMovements = [];
+      movedQuantities = {};
+
+      drawAll();
+
+      alert('Ordres esborrades!');
+    };
+
+    async function addMovementToSheet(fromHex, toHex, player, quantity) {
+      try {
+        const formData = new FormData();
+        formData.append(`entry.${ENTRY_IDS.fromHex}`, fromHex);
+        formData.append(`entry.${ENTRY_IDS.toHex}`, toHex);
+        formData.append(`entry.${ENTRY_IDS.player}`, player + 1);
+        formData.append(`entry.${ENTRY_IDS.quantity}`, quantity);
+
+        const response = await fetch(FORM_URL, {
+          method: 'POST',
+          mode: 'no-cors',
+          body: formData
+        });
+        return true;
+      } catch (e) {
+        console.warn('Form submission:', e);
+        return true;
+      }
+    }
+
+    function updateLocalArmies(fromHex, toHex, player, quantity) {
+      if (quantity <= 0) return;
+
+      const fromArmies = armyMap[fromHex];
+      const armyIndex = fromArmies.findIndex(a => a.player === player);
+      if (armyIndex !== -1) {
+        fromArmies[armyIndex].count -= quantity;
+        if (fromArmies[armyIndex].count <= 0) {
+          fromArmies.splice(armyIndex, 1);
+        }
+      }
+
+      if (!armyMap[toHex]) {
+        armyMap[toHex] = [];
+      }
+      const toArmiesIndex = armyMap[toHex].findIndex(a => a.player === player);
+      if (toArmiesIndex !== -1) {
+        armyMap[toHex][toArmiesIndex].count += quantity;
+      } else {
+        armyMap[toHex].push({ player: player, count: quantity });
+      }
     }
 
     async function loadAndDraw() {
