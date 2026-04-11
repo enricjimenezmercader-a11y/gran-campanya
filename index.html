@@ -520,6 +520,7 @@
       width: 100%;
       border-collapse: collapse;
       font-size: 0.85rem;
+      margin-bottom: 0.8rem;
     }
 
     .battle-table th {
@@ -547,7 +548,7 @@
     }
 
     .battle-input {
-      width: 60px;
+      width: 50px;
       background: rgba(0,0,0,0.3);
       border: 1px solid #c9a84c;
       color: #fff;
@@ -559,6 +560,42 @@
     .battle-input:focus {
       outline: none;
       box-shadow: 0 0 5px rgba(201,168,76,0.5);
+    }
+
+    .battle-resolve-btn {
+      padding: 0.6rem 1.2rem;
+      background: #5a5a5a;
+      border: 2px solid #8a8a8a;
+      color: #8a8a8a;
+      border-radius: 3px;
+      cursor: not-allowed;
+      font-family: 'Times New Roman', serif;
+      font-weight: bold;
+      transition: all 0.2s;
+      width: 100%;
+    }
+
+    .battle-resolve-btn.valid {
+      background: #7a5c1e;
+      border-color: #c9a84c;
+      color: #c9a84c;
+      cursor: pointer;
+    }
+
+    .battle-resolve-btn.valid:hover {
+      background: #c9a84c;
+      color: #1a1208;
+    }
+
+    .battle-status {
+      margin-top: 0.5rem;
+      font-size: 0.8rem;
+      color: #ffff99;
+      font-style: italic;
+    }
+
+    .battle-status.invalid {
+      color: #ff6464;
     }
   </style>
 </head>
@@ -619,7 +656,6 @@
     const SHEET_ID = '12QzDZCtJlhVK7gNPfhPH43MoncUNnSfSvcws1P7z0yo';
     const SHEET_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json`;
     
-    // Google Form Configuration
     const FORM_ID = '1FAIpQLSfQgS3eGiloGT2idP83Rucm3IlSKU6bCPucjhKB0l-805NgHQ';
     const FORM_URL = `https://docs.google.com/forms/d/e/${FORM_ID}/formResponse`;
     const ENTRY_IDS = {
@@ -637,7 +673,8 @@
     let hexPositions = {};
     let activeDestinationHexes = [];
     let hexRadius = 50;
-    let battles = []; // Store battle information
+    let battles = [];
+    let battleResults = {}; // Store battle resolution results
 
     function getTeamTextColor(player) {
       return player < 3 ? '#5a96ff' : '#ff4a4a';
@@ -732,11 +769,9 @@
       return pts.join(' ');
     }
 
-    // Detect battles
     function detectBattles() {
       battles = [];
       
-      // Group movements by hexagon pairs
       const hexPairs = {};
       
       for (const movement of pendingMovements) {
@@ -747,7 +782,6 @@
         const toTeamObj = teamOf(toCol, toRow);
         const toTeam = toTeamObj === 'blau' ? 'blue' : 'red';
         
-        // Only battles between different teams
         if (fromTeam !== toTeam) {
           const pairKey = [movement.fromHex, movement.toHex].sort().join('-');
           
@@ -762,7 +796,6 @@
         }
       }
       
-      // Check for counter-movements (battles)
       for (const pairKey in hexPairs) {
         const pair = hexPairs[pairKey];
         const [hex1, hex2] = [pair.hex1, pair.hex2];
@@ -772,6 +805,7 @@
         
         if (forwardMovements.length > 0 && backwardMovements.length > 0) {
           battles.push({
+            id: pairKey,
             hex1: hex1,
             hex2: hex2,
             movements: pair.movements
@@ -802,19 +836,6 @@
           hexLabelOverlay.appendChild(label);
         }
       }
-    }
-
-    function getDirectionToHex(fromHex, toHex) {
-      const fromPos = hexPositions[fromHex];
-      const toPos = hexPositions[toHex];
-      
-      if (!fromPos || !toPos) return 0;
-      
-      const dx = toPos.cx - fromPos.cx;
-      const dy = toPos.cy - fromPos.cy;
-      const angle = Math.atan2(dy, dx) * 180 / Math.PI;
-      
-      return angle;
     }
 
     function getArrowRotation(fromHex, toHex) {
@@ -851,7 +872,6 @@
       return { x, y };
     }
 
-    // Get midpoint between two hexes for battle explosion
     function getBattleMidpoint(hex1, hex2) {
       const pos1 = hexPositions[hex1];
       const pos2 = hexPositions[hex2];
@@ -863,6 +883,99 @@
         y: (pos1.cy + pos2.cy) / 2
       };
     }
+
+    window.validateBattle = function(battleId) {
+      const players = document.querySelectorAll(`[data-battle-id="${battleId}"][data-row-type="player"]`);
+      let isValid = true;
+
+      for (const playerRow of players) {
+        const initialForces = parseInt(playerRow.getAttribute('data-initial-forces'));
+        const avancen = parseInt(document.getElementById(`${battleId}-${playerRow.getAttribute('data-player')}-avancen`).value) || 0;
+        const perdues = parseInt(document.getElementById(`${battleId}-${playerRow.getAttribute('data-player')}-perdues`).value) || 0;
+        const retirades = parseInt(document.getElementById(`${battleId}-${playerRow.getAttribute('data-player')}-retirades`).value) || 0;
+
+        if (avancen + perdues + retirades !== initialForces) {
+          isValid = false;
+          break;
+        }
+      }
+
+      const btn = document.getElementById(`${battleId}-resolve-btn`);
+      const status = document.getElementById(`${battleId}-status`);
+      
+      if (isValid) {
+        btn.classList.add('valid');
+        status.textContent = '✓ Llest per resoldre';
+        status.classList.remove('invalid');
+      } else {
+        btn.classList.remove('valid');
+        status.textContent = '✗ La suma no coincideix amb forces inicials';
+        status.classList.add('invalid');
+      }
+    };
+
+    window.resolveBattle = function(battleId) {
+      const btn = document.getElementById(`${battleId}-resolve-btn`);
+      if (!btn.classList.contains('valid')) return;
+
+      const players = document.querySelectorAll(`[data-battle-id="${battleId}"][data-row-type="player"]`);
+      const battleResults = {};
+
+      for (const playerRow of players) {
+        const player = parseInt(playerRow.getAttribute('data-player'));
+        const avancen = parseInt(document.getElementById(`${battleId}-${player}-avancen`).value) || 0;
+        const retirades = parseInt(document.getElementById(`${battleId}-${player}-retirades`).value) || 0;
+
+        battleResults[player] = {
+          avancen: avancen,
+          retirades: retirades
+        };
+      }
+
+      // Find the battle
+      const battle = battles.find(b => b.id === battleId);
+      if (!battle) return;
+
+      // Update movements with new advancing quantities
+      for (const player in battleResults) {
+        const playerNum = parseInt(player);
+        const data = battleResults[player];
+        
+        for (let i = 0; i < pendingMovements.length; i++) {
+          const movement = pendingMovements[i];
+          
+          // Check if this movement is in this battle
+          const isBattleMovement = battle.movements.some(m => 
+            m.fromHex === movement.fromHex && 
+            m.toHex === movement.toHex && 
+            m.player === movement.player
+          );
+
+          if (isBattleMovement && movement.player === playerNum) {
+            // Update to advancing quantity
+            pendingMovements[i].quantity = data.avancen;
+            
+            // Add retired armies back to origin
+            if (data.retirades > 0) {
+              if (!armyMap[movement.fromHex]) {
+                armyMap[movement.fromHex] = [];
+              }
+              const armyIndex = armyMap[movement.fromHex].findIndex(a => a.player === playerNum);
+              if (armyIndex !== -1) {
+                armyMap[movement.fromHex][armyIndex].count += data.retirades;
+              } else {
+                armyMap[movement.fromHex].push({ player: playerNum, count: data.retirades });
+              }
+            }
+          }
+        }
+      }
+
+      battleResults[battleId] = battleResults;
+
+      // Redraw
+      drawAll();
+    };
 
     async function addMovementToSheet(fromHex, toHex, player, quantity) {
       try {
@@ -1022,6 +1135,7 @@
       pendingMovements = [];
       movedQuantities = {};
       activeDestinationHexes = [];
+      battleResults = {};
 
       if (currentHex) {
         showHexPanel(...currentHex.split('_').map(Number));
@@ -1044,6 +1158,7 @@
       pendingMovements = [];
       movedQuantities = {};
       activeDestinationHexes = [];
+      battleResults = {};
 
       if (currentHex) {
         showHexPanel(...currentHex.split('_').map(Number));
@@ -1252,13 +1367,13 @@
               <tr>
                 <th>Jugador</th>
                 <th>Forces inicials</th>
-                <th>Perdues</th>
+                <th>Avancen</th>
+                <th>Pèrdues</th>
                 <th>Retirades</th>
               </tr>
             </thead>
             <tbody>`;
         
-        // Get unique players in this battle
         const playersInBattle = new Set();
         for (const movement of battle.movements) {
           playersInBattle.add(movement.player);
@@ -1267,18 +1382,21 @@
         for (const player of Array.from(playersInBattle).sort((a, b) => a - b)) {
           const playerMovements = battle.movements.filter(m => m.player === player);
           const totalForces = playerMovements.reduce((sum, m) => sum + m.quantity, 0);
-          const battleId = `battle-${i}-player-${player}`;
+          const battleId = battle.id;
           
-          html += `<tr>
+          html += `<tr data-battle-id="${battleId}" data-row-type="player" data-player="${player}" data-initial-forces="${totalForces}">
             <td class="battle-player">Jugador ${player + 1}</td>
             <td>${totalForces}</td>
-            <td><input type="number" id="${battleId}-lost" class="battle-input" min="0" max="${totalForces}" value="0"></td>
-            <td><input type="number" id="${battleId}-retired" class="battle-input" min="0" max="${totalForces}" value="0"></td>
+            <td><input type="number" id="${battleId}-${player}-avancen" class="battle-input" min="0" max="${totalForces}" value="0" oninput="validateBattle('${battleId}')"></td>
+            <td><input type="number" id="${battleId}-${player}-perdues" class="battle-input" min="0" max="${totalForces}" value="0" oninput="validateBattle('${battleId}')"></td>
+            <td><input type="number" id="${battleId}-${player}-retirades" class="battle-input" min="0" max="${totalForces}" value="0" oninput="validateBattle('${battleId}')"></td>
           </tr>`;
         }
         
         html += `</tbody>
           </table>
+          <button id="${battle.id}-resolve-btn" class="battle-resolve-btn" onclick="resolveBattle('${battle.id}')">Resol</button>
+          <div id="${battle.id}-status" class="battle-status">Omplena els camps</div>
         </div>`;
       }
       
@@ -1388,7 +1506,6 @@
         }
       }
 
-      // Draw battle explosions
       detectBattles();
       for (const battle of battles) {
         const midpoint = getBattleMidpoint(battle.hex1, battle.hex2);
@@ -1413,7 +1530,6 @@
         }
       }
 
-      // Draw movement arrows
       for (const movement of pendingMovements) {
         const arrowSize = (hexRadius * 2 * 0.75) * 0.75;
         const arrowPos = getArrowPosition(movement.fromHex, movement.toHex, arrowSize);
@@ -1449,7 +1565,6 @@
         }
       }
 
-      // Display battles table
       displayBattles();
 
       document.getElementById('blue-count').textContent = blueCount;
