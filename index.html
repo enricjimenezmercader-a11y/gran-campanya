@@ -155,151 +155,122 @@
       }
     }
 
-    .menu-container {
-      display: flex;
-      flex-direction: column;
-      gap: 1.2rem;
-      min-width: 320px;
-      padding: 2rem;
-      background: rgba(0,0,0,0.6);
+    .players-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 1.5rem;
+      max-width: 900px;
+      width: 100%;
+    }
+
+    .player-card {
+      background: linear-gradient(135deg, rgba(51,51,51,0.6) 0%, rgba(0,0,0,0.8) 100%);
       border: 3px solid #ffcc00;
       border-radius: 2px;
-      box-shadow: 
-        0 0 20px rgba(255,204,0,0.3),
-        inset 0 0 20px rgba(255,204,0,0.1);
-    }
-
-    .menu-btn {
-      padding: 1.2rem 2.5rem;
-      font-family: 'Oswald', sans-serif;
-      font-size: 1.2rem;
-      font-weight: 700;
-      background: linear-gradient(135deg, #cc3333 0%, #990000 100%);
-      color: #ffcc00;
-      border: 2px solid #ffcc00;
-      border-radius: 0;
-      cursor: pointer;
+      padding: 2rem 1.5rem;
+      box-shadow: 0 0 20px rgba(255,204,0,0.3);
       transition: all 0.3s ease;
-      text-decoration: none;
-      display: inline-block;
-      text-align: center;
-      box-shadow: 
-        0 6px 0 #000,
-        0 8px 15px rgba(0,0,0,0.7),
-        inset 0 1px 0 rgba(255,255,255,0.2);
+      cursor: pointer;
       position: relative;
       overflow: hidden;
-      text-transform: uppercase;
-      letter-spacing: 0.1em;
     }
 
-    .menu-btn::before {
+    .player-card::before {
       content: '';
       position: absolute;
       top: 0;
       left: -100%;
       width: 100%;
       height: 100%;
-      background: linear-gradient(90deg, transparent, rgba(255,204,0,0.3), transparent);
+      background: linear-gradient(90deg, transparent, rgba(255,204,0,0.2), transparent);
       transition: left 0.5s ease;
       z-index: 1;
     }
 
-    .menu-btn::after {
-      content: '';
-      position: absolute;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 2px;
-      background: rgba(255,255,255,0.5);
-      z-index: 0;
-    }
-
-    .menu-btn:hover::before {
+    .player-card:hover::before {
       left: 100%;
     }
 
-    .menu-btn:hover {
-      background: linear-gradient(135deg, #ffcc00 0%, #ff8800 100%);
-      color: #000;
-      transform: translateY(-3px);
-      box-shadow: 
-        0 9px 0 #000,
-        0 12px 20px rgba(0,0,0,0.9),
-        inset 0 1px 0 rgba(255,255,255,0.3);
+    .player-card:hover {
+      background: linear-gradient(135deg, rgba(255,204,0,0.15) 0%, rgba(255,100,0,0.1) 100%);
+      transform: translateY(-5px);
+      box-shadow: 0 8px 30px rgba(255,204,0,0.5);
     }
 
-    .menu-btn:active {
-      transform: translateY(-1px);
-      box-shadow: 
-        0 4px 0 #000,
-        0 6px 10px rgba(0,0,0,0.7),
-        inset 0 1px 0 rgba(255,255,255,0.2);
-    }
-
-    .menu-btn.primary {
-      font-size: 1.4rem;
-      padding: 1.5rem 3.5rem;
-      background: linear-gradient(135deg, #ffcc00 0%, #ff8800 100%);
-      color: #000;
-      border-color: #ffff00;
-      text-shadow: 1px 1px 0 rgba(0,0,0,0.3);
-    }
-
-    .menu-btn.primary:hover {
-      background: linear-gradient(135deg, #ffff00 0%, #ffaa00 100%);
-      color: #000;
-    }
-
-    .menu-btn.secondary {
-      font-size: 1rem;
-      padding: 1rem 2rem;
-      background: linear-gradient(135deg, #333333 0%, #1a1a1a 100%);
-      color: #ffcc00;
-      border-color: #666666;
-    }
-
-    .menu-btn.secondary:hover {
-      background: linear-gradient(135deg, #555555 0%, #333333 100%);
-      border-color: #ffcc00;
-      color: #ffff00;
-    }
-
-    .stats-container {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
-      gap: 1.5rem;
-      margin-top: 2rem;
-      width: 100%;
-      max-width: 600px;
-    }
-
-    .stat-box {
-      background: linear-gradient(135deg, rgba(204,51,51,0.2) 0%, rgba(0,0,0,0.4) 100%);
-      border: 2px solid #ffcc00;
-      border-radius: 2px;
-      padding: 1.5rem 1rem;
-      box-shadow: 
-        0 0 15px rgba(255,204,0,0.2),
-        inset 0 0 10px rgba(255,204,0,0.1);
-    }
-
-    .stat-label {
+    .player-number {
       font-family: 'Oswald', sans-serif;
-      font-size: 0.9rem;
+      font-size: 2.5rem;
+      color: #ffcc00;
+      font-weight: 700;
+      margin-bottom: 0.5rem;
+      text-shadow: 0 0 10px rgba(255,204,0,0.5);
+    }
+
+    .player-name {
+      font-family: 'Oswald', sans-serif;
+      font-size: 1.1rem;
+      color: #ffcc00;
+      margin-bottom: 0.5rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .player-email {
+      font-family: 'Roboto', sans-serif;
+      font-size: 0.85rem;
       color: #888;
-      margin-bottom: 0.8rem;
+      margin-bottom: 1rem;
+      word-break: break-all;
+    }
+
+    .player-team {
+      font-size: 0.9rem;
+      margin-bottom: 1.5rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .player-team.blue {
+      color: #5a96ff;
+    }
+
+    .player-team.red {
+      color: #ff4a4a;
+    }
+
+    .btn-access {
+      padding: 0.9rem 1.5rem;
+      font-family: 'Oswald', sans-serif;
+      font-size: 1rem;
+      font-weight: 700;
+      background: linear-gradient(135deg, #ffcc00 0%, #ff8800 100%);
+      color: #000;
+      border: 2px solid #ffff00;
+      border-radius: 2px;
+      cursor: pointer;
+      transition: all 0.3s ease;
       text-transform: uppercase;
       letter-spacing: 0.08em;
-      font-weight: 700;
+      width: 100%;
+      box-shadow: 0 4px 8px rgba(0,0,0,0.5);
     }
 
-    .stat-value {
-      font-size: 2rem;
-      color: #ffcc00;
-      font-weight: 700;
-      text-shadow: 2px 2px 4px #000;
+    .btn-access:hover {
+      background: linear-gradient(135deg, #ffff00 0%, #ffaa00 100%);
+      transform: scale(1.05);
+      box-shadow: 0 6px 12px rgba(0,0,0,0.7);
+    }
+
+    .btn-access:active {
+      transform: scale(0.98);
+    }
+
+    .btn-access:disabled {
+      background: #666;
+      color: #999;
+      cursor: not-allowed;
+      opacity: 0.6;
     }
 
     .footer {
@@ -332,49 +303,174 @@
       box-shadow: 0 0 20px rgba(255,204,0,0.5);
     }
 
-    .military-stripe::after {
-      content: '';
-      position: absolute;
+    /* Modal Styles */
+    .modal {
+      display: none;
+      position: fixed;
+      z-index: 1000;
+      left: 0;
+      top: 0;
       width: 100%;
-      height: 4px;
-      background: linear-gradient(90deg, #ffcc00, #cc3333, #ffcc00);
-      bottom: -8px;
-      box-shadow: 0 0 15px rgba(255,204,0,0.3);
+      height: 100%;
+      background-color: rgba(0,0,0,0.8);
+      animation: fadeIn 0.3s ease;
     }
 
-    .emblems {
-      display: flex;
-      gap: 2rem;
-      justify-content: center;
-      margin-top: 1.5rem;
-      flex-wrap: wrap;
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
     }
 
-    .emblem {
-      width: 60px;
-      height: 60px;
-      background: linear-gradient(135deg, #ffcc00 0%, #ff8800 100%);
-      border: 2px solid #cc3333;
+    .modal-content {
+      background: linear-gradient(135deg, rgba(51,51,51,0.95) 0%, rgba(0,0,0,0.95) 100%);
+      margin: 10% auto;
+      padding: 2rem;
+      border: 3px solid #ffcc00;
       border-radius: 2px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 2rem;
-      box-shadow: 0 4px 10px rgba(0,0,0,0.5);
-      animation: bounce 2s ease-in-out infinite;
+      width: 90%;
+      max-width: 500px;
+      box-shadow: 0 0 40px rgba(255,204,0,0.5);
+      animation: slideIn 0.3s ease;
     }
 
-    .emblem:nth-child(2) {
-      animation-delay: 0.2s;
-    }
-
-    @keyframes bounce {
-      0%, 100% {
+    @keyframes slideIn {
+      from {
+        transform: translateY(-50px);
+        opacity: 0;
+      }
+      to {
         transform: translateY(0);
+        opacity: 1;
       }
-      50% {
-        transform: translateY(-10px);
-      }
+    }
+
+    .modal h2 {
+      font-family: 'Oswald', sans-serif;
+      color: #ffcc00;
+      margin-bottom: 1.5rem;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      font-size: 1.5rem;
+    }
+
+    .form-group {
+      margin-bottom: 1.5rem;
+    }
+
+    .form-group label {
+      display: block;
+      color: #ffcc00;
+      margin-bottom: 0.5rem;
+      font-weight: 700;
+      font-family: 'Oswald', sans-serif;
+      text-transform: uppercase;
+      font-size: 0.9rem;
+    }
+
+    .form-group input {
+      width: 100%;
+      padding: 0.8rem;
+      background: rgba(0,0,0,0.5);
+      border: 2px solid #ffcc00;
+      color: #fff;
+      font-family: 'Roboto', sans-serif;
+      border-radius: 2px;
+      font-size: 1rem;
+    }
+
+    .form-group input:focus {
+      outline: none;
+      box-shadow: 0 0 10px rgba(255,204,0,0.5);
+      background: rgba(0,0,0,0.7);
+    }
+
+    .form-group input::placeholder {
+      color: #666;
+    }
+
+    .btn-modal {
+      width: 100%;
+      padding: 1rem;
+      background: linear-gradient(135deg, #ffcc00 0%, #ff8800 100%);
+      color: #000;
+      border: 2px solid #ffff00;
+      border-radius: 2px;
+      font-family: 'Oswald', sans-serif;
+      font-weight: 700;
+      font-size: 1rem;
+      cursor: pointer;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      transition: all 0.3s ease;
+      margin-bottom: 0.5rem;
+    }
+
+    .btn-modal:hover {
+      background: linear-gradient(135deg, #ffff00 0%, #ffaa00 100%);
+      transform: scale(1.02);
+    }
+
+    .btn-modal:disabled {
+      background: #666;
+      color: #999;
+      cursor: not-allowed;
+      opacity: 0.6;
+    }
+
+    .btn-cancel {
+      background: linear-gradient(135deg, #333333 0%, #1a1a1a 100%);
+      color: #ffcc00;
+      border-color: #666666;
+    }
+
+    .btn-cancel:hover {
+      background: linear-gradient(135deg, #555555 0%, #333333 100%);
+      border-color: #ffcc00;
+    }
+
+    .error-message {
+      color: #ff4a4a;
+      text-align: center;
+      margin-top: 1rem;
+      font-weight: 700;
+      display: none;
+    }
+
+    .success-message {
+      color: #90ff90;
+      text-align: center;
+      margin-top: 1rem;
+      font-weight: 700;
+      display: none;
+      line-height: 1.6;
+    }
+
+    .loading-spinner {
+      display: inline-block;
+      width: 20px;
+      height: 20px;
+      border: 3px solid rgba(255,204,0,0.3);
+      border-radius: 50%;
+      border-top-color: #ffcc00;
+      animation: spin 0.8s linear infinite;
+      margin-right: 0.5rem;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    .close {
+      color: #ffcc00;
+      float: right;
+      font-size: 2rem;
+      font-weight: bold;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+
+    .close:hover {
+      color: #ff8800;
     }
 
     @media (max-width: 768px) {
@@ -382,45 +478,23 @@
         font-size: clamp(1.8rem, 8vw, 3rem);
       }
 
-      .subtitle {
-        font-size: 1rem;
+      .players-grid {
+        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+        gap: 1rem;
       }
 
-      .menu-container {
-        min-width: 280px;
+      .player-card {
+        padding: 1.5rem 1rem;
+      }
+
+      .player-number {
+        font-size: 2rem;
+      }
+
+      .modal-content {
+        margin: 20% auto;
+        width: 95%;
         padding: 1.5rem;
-      }
-
-      .menu-btn {
-        padding: 1rem 1.8rem;
-        font-size: 1rem;
-      }
-
-      .menu-btn.primary {
-        font-size: 1.2rem;
-        padding: 1.2rem 2.5rem;
-      }
-
-      .stats-container {
-        gap: 1rem;
-      }
-
-      .stat-box {
-        padding: 1rem 0.8rem;
-      }
-
-      .stat-value {
-        font-size: 1.6rem;
-      }
-
-      .emblems {
-        gap: 1rem;
-      }
-
-      .emblem {
-        width: 50px;
-        height: 50px;
-        font-size: 1.6rem;
       }
     }
   </style>
@@ -437,37 +511,209 @@
         <p class="subtitle">WWII Strategic Battle</p>
         <div class="map-marker"></div>
       </div>
-      <p class="tagline">⚔️ Command Your Forces • Conquer the Territory ⚔️</p>
+      <p class="tagline">⚔️ Select Your Command ⚔️</p>
     </div>
 
-    <div class="emblems">
-      <div class="emblem">🛖</div>
-      <div class="emblem">⚔️</div>
-      <div class="emblem">🚩</div>
+    <div class="players-grid" id="playersGrid">
+      <!-- Players will be loaded here -->
     </div>
+  </div>
 
-    <div class="menu-container">
-      <a href="ordres.html" class="menu-btn primary">▶ COMMENCE OPERATION</a>
-      <a href="desplegament.html" class="menu-btn secondary">🎖️ Desplegament</a>
-      <a href="batalles.html" class="menu-btn secondary">⚔️ Batalles</a>
-    </div>
+  <!-- Validation Modal -->
+  <div id="validationModal" class="modal">
+    <div class="modal-content">
+      <span class="close" onclick="closeValidationModal()">&times;</span>
+      <h2>✓ Validació</h2>
+      
+      <div class="form-group">
+        <label>Comandant: <span id="commanderName"></span></label>
+      </div>
 
-    <div class="stats-container">
-      <div class="stat-box">
-        <div class="stat-label">Territories</div>
-        <div class="stat-value">54</div>
+      <div class="form-group">
+        <label>Correu: <span id="commanderEmail" style="color: #888; font-family: 'Roboto', sans-serif; text-transform: none; font-size: 0.9rem;"></span></label>
       </div>
-      <div class="stat-box">
-        <div class="stat-label">Factions</div>
-        <div class="stat-value">2</div>
+
+      <div class="form-group">
+        <label>Codi de Validació:</label>
+        <input type="text" id="codeInput" placeholder="Introduïu el codi rebut al correu" maxlength="6">
       </div>
-      <div class="stat-box">
-        <div class="stat-label">Commanders</div>
-        <div class="stat-value">6</div>
-      </div>
+
+      <button class="btn-modal" onclick="verifyCode()" id="verifyBtn">Verificar Codi</button>
+      <button class="btn-modal btn-cancel" onclick="closeValidationModal()">Cancel·lar</button>
+
+      <div class="error-message" id="validationError"></div>
+      <div class="success-message" id="validationSuccess"></div>
     </div>
   </div>
 
   <div class="footer">
-    <p>© 2026 •*
-
+    <p>© 2026 • Gran Campanya Command Center</p>
+    <div class="version-badge">VERSION 1.0</div>
+  </div>
+
+  <script>
+    let currentPlayer = null;
+    let playersData = {};
+    let validationCodes = {};
+
+    // Load player data from spreadsheet
+    async function loadPlayerData() {
+      try {
+        const SHEET_ID = '12QzDZCtJlhVK7gNPfhPH43MoncUNnSfSvcws1P7z0yo';
+        const PLAYER_SHEET_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json&gid=234059431`;
+        
+        const res = await fetch(PLAYER_SHEET_URL);
+        const text = await res.text();
+        const json = JSON.parse(text.replace(/^[^(]+\(/, '').replace(/\);?\s*$/, ''));
+        const rows = json.table.rows;
+
+        // Player configuration
+        const playerConfig = [
+          { team: 'blue', icon: '🔵' },
+          { team: 'blue', icon: '🔵' },
+          { team: 'blue', icon: '🔵' },
+          { team: 'red', icon: '🔴' },
+          { team: 'red', icon: '🔴' },
+          { team: 'red', icon: '🔴' }
+        ];
+
+        // Load player names and emails
+        for (let i = 0; i < 6; i++) {
+          const rowIndex = i + 1;
+          let name = `Jugador ${i + 1}`;
+          let email = '';
+
+          if (rows[rowIndex] && rows[rowIndex].c) {
+            // Column B (index 1) = Name
+            if (rows[rowIndex].c[1] && rows[rowIndex].c[1].v) {
+              const customName = rows[rowIndex].c[1].v.toString().trim();
+              if (customName) name = customName;
+            }
+
+            // Column C (index 2) = Email
+            if (rows[rowIndex].c[2] && rows[rowIndex].c[2].v) {
+              email = rows[rowIndex].c[2].v.toString().trim();
+            }
+          }
+
+          playersData[i] = {
+            name: name,
+            email: email,
+            team: playerConfig[i].team,
+            icon: playerConfig[i].icon,
+            number: i + 1
+          };
+        }
+
+        renderPlayers();
+      } catch(e) {
+        console.error('Error loading player data:', e);
+      }
+    }
+
+    function renderPlayers() {
+      const grid = document.getElementById('playersGrid');
+      grid.innerHTML = '';
+
+      for (let i = 0; i < 6; i++) {
+        const player = playersData[i];
+        const teamLabel = player.team === 'blue' ? 'EQUIP BLAU' : 'EQUIP VERMELL';
+
+        const card = document.createElement('div');
+        card.className = 'player-card';
+        card.onclick = () => openValidationModal(i);
+
+        card.innerHTML = `
+          <div class="player-number">${player.number}</div>
+          <div class="player-name">${player.name}</div>
+          <div class="player-email">${player.email}</div>
+          <div class="player-team ${player.team}">${player.icon} ${teamLabel}</div>
+          <button class="btn-access">Accedir</button>
+        `;
+
+        grid.appendChild(card);
+      }
+    }
+
+    function generateCode() {
+      return Math.floor(Math.random() * 1000000).toString().padStart(6, '0');
+    }
+
+    function openValidationModal(playerNum) {
+      currentPlayer = playerNum;
+      const player = playersData[playerNum];
+
+      // Update modal with player info
+      document.getElementById('commanderName').textContent = `${player.name} (Jugador ${playerNum + 1})`;
+      document.getElementById('commanderEmail').textContent = player.email || 'No disponible';
+      document.getElementById('codeInput').value = '';
+      document.getElementById('validationError').style.display = 'none';
+      document.getElementById('validationSuccess').style.display = 'none';
+
+      // Generate validation code
+      const code = generateCode();
+      validationCodes[playerNum] = code;
+
+      // Show test code (in production, this would be sent via email)
+      const successDiv = document.getElementById('validationSuccess');
+      successDiv.innerHTML = `
+        📧 Codi de Validació Enviat<br>
+        <small style="color: #aaa;">Test: <strong style="color: #ffcc00;">${code}</strong></small>
+      `;
+      successDiv.style.display = 'block';
+
+      document.getElementById('validationModal').style.display = 'block';
+      document.getElementById('codeInput').focus();
+    }
+
+    function closeValidationModal() {
+      document.getElementById('validationModal').style.display = 'none';
+      currentPlayer = null;
+    }
+
+    function verifyCode() {
+      const enteredCode = document.getElementById('codeInput').value.trim();
+      const expectedCode = validationCodes[currentPlayer];
+      const errorDiv = document.getElementById('validationError');
+      const verifyBtn = document.getElementById('verifyBtn');
+
+      if (!enteredCode) {
+        errorDiv.textContent = '❌ Introduïu el codi';
+        errorDiv.style.display = 'block';
+        return;
+      }
+
+      if (enteredCode === expectedCode) {
+        // Code is valid - redirect to ordres.html with player ID
+        verifyBtn.disabled = true;
+        verifyBtn.innerHTML = '<span class="loading-spinner"></span>Accedint...';
+
+        setTimeout(() => {
+          const player = playersData[currentPlayer];
+          window.location.href = `ordres.html?player=${currentPlayer}&email=${encodeURIComponent(player.email)}&name=${encodeURIComponent(player.name)}`;
+        }, 1000);
+      } else {
+        errorDiv.textContent = '❌ Codi incorrecte';
+        errorDiv.style.display = 'block';
+      }
+    }
+
+    // Allow Enter key to submit
+    document.addEventListener('DOMContentLoaded', () => {
+      document.getElementById('codeInput').addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') verifyCode();
+      });
+
+      loadPlayerData();
+    });
+
+    // Close modal when clicking outside
+    window.onclick = function(event) {
+      const modal = document.getElementById('validationModal');
+      if (event.target == modal) {
+        closeValidationModal();
+      }
+    }
+  </script>
+</body>
+</html>
