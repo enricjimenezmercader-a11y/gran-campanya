@@ -18,14 +18,48 @@
       font-family: 'UnifrakturMaguntia', cursive;
     }
 
+    .title-container {
+      text-align: center;
+      margin-bottom: 1rem;
+    }
+
     h1 {
       font-family: 'UnifrakturMaguntia', cursive;
       font-size: clamp(2.5rem, 6.25vw, 5rem);
       color: #c9a84c;
       letter-spacing: 0.08em;
       text-shadow: 0 0 12px rgba(201,168,76,0.7), 2px 2px 4px #000;
-      margin-bottom: 1.5rem;
+      margin-bottom: 0.25rem;
       text-align: center;
+      display: inline;
+    }
+
+    .version-number {
+      font-family: 'Times New Roman', serif;
+      font-size: 0.6em;
+      color: #7a5c1e;
+      text-shadow: 0 0 8px rgba(201,168,76,0.5);
+      margin-left: 0.5rem;
+      opacity: 0.8;
+    }
+
+    .hex-count-display {
+      display: flex;
+      gap: 2.5rem;
+      justify-content: center;
+      margin-top: 1rem;
+      margin-bottom: 1.5rem;
+      font-family: 'UnifrakturMaguntia', cursive;
+      font-size: 1.1rem;
+      text-shadow: 1px 1px 3px #000;
+    }
+
+    .hex-count-blue {
+      color: #4a96ff;
+    }
+
+    .hex-count-red {
+      color: #e64646;
     }
 
     .game-container {
@@ -785,7 +819,14 @@
   </style>
 </head>
 <body>
-  <h1>Gran Campanya</h1>
+  <div class="title-container">
+    <h1>Gran Campanya<span class="version-number">v5</span></h1>
+  </div>
+
+  <div class="hex-count-display">
+    <span class="hex-count-blue">🔵 Equip Blau — <span id="blue-count">27</span> hex</span>
+    <span class="hex-count-red">🔴 Equip Vermell — <span id="red-count">27</span> hex</span>
+  </div>
   
   <div class="overlay-backdrop" id="backdrop"></div>
 
@@ -1947,10 +1988,5 @@
     window.addEventListener('resize', drawAll);
     backdrop.addEventListener('click', closeSidePanel);
   </script>
-
-  <div style="display:flex;gap:2.5rem;margin-top:1.25rem;font-family:'UnifrakturMaguntia',cursive;font-size:1.4375rem;text-shadow:1px 1px 3px #000;">
-    <span style="color:#4a96ff;">&#9632; Equip Blau &mdash; <span id="blue-count">27</span> hex</span>
-    <span style="color:#e64646;">&#9632; Equip Vermell &mdash; <span id="red-count">27</span> hex</span>
-  </div>
 </body>
 </html>
