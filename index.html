@@ -702,6 +702,7 @@
     const waterHexes = new Set(['2_1','3_1','4_0','4_1','5_0','6_0']);
     const SHEET_ID = '12QzDZCtJlhVK7gNPfhPH43MoncUNnSfSvcws1P7z0yo';
     const SHEET_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json`;
+    const PLAYER_SHEET_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json&gid=234059431`;
     
     const FORM_ID = '1FAIpQLSfQgS3eGiloGT2idP83Rucm3IlSKU6bCPucjhKB0l-805NgHQ';
     const FORM_URL = `https://docs.google.com/forms/d/e/${FORM_ID}/formResponse`;
@@ -714,6 +715,7 @@
 
     let teamMap = {};
     let armyMap = {};
+    let playerNames = ['Jugador 1', 'Jugador 2', 'Jugador 3', 'Jugador 4', 'Jugador 5', 'Jugador 6'];
     let currentHex = null;
     let pendingMovements = [];
     let movedQuantities = {};
@@ -730,6 +732,10 @@
 
     function getPlayerTeam(player) {
       return player < 3 ? 'blue' : 'red';
+    }
+
+    function getPlayerName(player) {
+      return playerNames[player] || `Jugador ${player + 1}`;
     }
 
     function parseGVizJSON(text) {
@@ -755,6 +761,26 @@
       }
       armyMap = armyData;
       return map;
+    }
+
+    function parsePlayerNames(text) {
+      try {
+        const json = JSON.parse(text.replace(/^[^(]+\(/, '').replace(/\);?\s*$/, ''));
+        const rows = json.table.rows;
+        
+        playerNames = ['Jugador 1', 'Jugador 2', 'Jugador 3', 'Jugador 4', 'Jugador 5', 'Jugador 6'];
+        
+        for (let i = 0; i < Math.min(6, rows.length); i++) {
+          if (rows[i].c && rows[i].c[1] && rows[i].c[1].v) {
+            const customName = rows[i].c[1].v.toString().trim();
+            if (customName) {
+              playerNames[i] = customName;
+            }
+          }
+        }
+      } catch(e) {
+        console.warn('Error parsing player names:', e);
+      }
     }
 
     function teamOf(col, row) {
@@ -823,7 +849,6 @@
       const hexPairs = {};
       
       for (const movement of pendingMovements) {
-        // Skip movements with zero or negative quantity
         if (movement.quantity <= 0) continue;
 
         const [fromCol, fromRow] = movement.fromHex.split('_').map(Number);
@@ -868,7 +893,6 @@
     function updateEndTurnButtonState() {
       detectBattles();
       
-      // Check if all battles are resolved
       let allResolved = true;
       for (const battle of battles) {
         if (!resolvedBattles.has(battle.id)) {
@@ -877,7 +901,6 @@
         }
       }
       
-      // If there are battles and not all resolved, disable button
       if (battles.length > 0 && !allResolved) {
         endTurnBtn.disabled = true;
       } else {
@@ -1107,7 +1130,7 @@
         }
         
         moveForm.innerHTML = `
-          <label>Jugador ${player + 1} - Moure ${currentCount} exèrcits</label>
+          <label>${getPlayerName(player)} - Moure ${currentCount} exèrcits</label>
           <select id="dest-hex-${player}" onchange="updateDestinationHighlight(this.value, '${fromHex}')">
             ${selectOptions}
           </select>
@@ -1192,7 +1215,6 @@
         return;
       }
 
-      // Close side panel first
       closeSidePanel();
 
       console.log('Executing movements:', pendingMovements);
@@ -1273,7 +1295,7 @@
             const div = document.createElement('div');
             div.className = 'army-info';
             div.innerHTML = `
-              <span class="army-info-label">Jugador ${army.player + 1}</span>
+              <span class="army-info-label">${getPlayerName(army.player)}</span>
               <span class="army-info-value">${availableCount}</span>
               <button class="move-btn" ${availableCount <= 0 ? 'disabled' : ''} onclick="showMoveForm(${army.player}, ${availableCount}, '${hexKey}')">Moure</button>
             `;
@@ -1299,7 +1321,7 @@
             const div = document.createElement('div');
             div.className = 'army-info';
             div.innerHTML = `
-              <span class="army-info-label">Jugador ${army.player + 1}</span>
+              <span class="army-info-label">${getPlayerName(army.player)}</span>
               <span class="army-info-value">${availableCount}</span>
               <button class="move-btn" ${availableCount <= 0 ? 'disabled' : ''} onclick="showMoveForm(${army.player}, ${availableCount}, '${hexKey}')">Moure</button>
             `;
@@ -1395,7 +1417,7 @@
           const armyImg = document.createElement('img');
           armyImg.className = 'army-image';
           armyImg.src = `Equip${army.player + 1}.png`;
-          armyImg.alt = `Jugador ${army.player + 1}`;
+          armyImg.alt = `${getPlayerName(army.player)}`;
           
           if (i >= displayCount) {
             armyImg.classList.add('hidden');
@@ -1455,7 +1477,7 @@
           const battleId = battle.id;
           
           html += `<tr data-battle-id="${battleId}" data-row-type="player" data-player="${player}" data-initial-forces="${totalForces}">
-            <td class="battle-player">Jugador ${player + 1}</td>
+            <td class="battle-player">${getPlayerName(player)}</td>
             <td>${totalForces}</td>
             <td><input type="number" id="${battleId}-${player}-avancen" class="battle-input" min="0" max="${totalForces}" value="0" oninput="validateBattle('${battleId}')"></td>
             <td><input type="number" id="${battleId}-${player}-perdues" class="battle-input" min="0" max="${totalForces}" value="0" oninput="validateBattle('${battleId}')"></td>
@@ -1601,7 +1623,6 @@
       }
 
       for (const movement of pendingMovements) {
-        // Skip movements with zero or negative quantity
         if (movement.quantity <= 0) continue;
 
         const arrowSize = (hexRadius * 2 * 0.75) * 0.75;
@@ -1654,6 +1675,17 @@
       } catch(e) {
         console.error('Error loading sheet:', e);
       }
+
+      try {
+        const res = await fetch(PLAYER_SHEET_URL);
+        if (res.ok) {
+          const text = await res.text();
+          parsePlayerNames(text);
+        }
+      } catch(e) {
+        console.warn('Error loading player names:', e);
+      }
+
       if (img.complete) {
         drawAll();
       } else {
