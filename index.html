@@ -820,7 +820,7 @@
 </head>
 <body>
   <div class="title-container">
-    <h1>Gran Campanya<span class="version-number">v5</span></h1>
+    <h1>Gran Campanya<span class="version-number">v6</span></h1>
   </div>
 
   <div class="hex-count-display">
@@ -1655,6 +1655,9 @@
       movedQuantities[moveKey] = (movedQuantities[moveKey] || 0) + quantity;
 
       statusDiv.innerHTML = '<div class="status-message status-success">Moviment ordenat!</div>';
+      
+      // CRITICAL FIX: Clear highlights immediately after ordering
+      activeDestinationHexes = [];
       
       setTimeout(() => {
         cancelMove(player, fromHex);
