@@ -243,7 +243,6 @@
 
     #destination-overlay {
       z-index: 600;
-      pointer-events: auto;
     }
 
     #hex-label-overlay { z-index: 601; }
@@ -332,6 +331,7 @@
       object-fit: contain;
       filter: drop-shadow(2px 2px 3px rgba(0,0,0,0.6));
       image-rendering: crisp-edges;
+      pointer-events: none;
     }
 
     .army-image.hidden {
